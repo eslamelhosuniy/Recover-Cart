@@ -1,8 +1,16 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from app.config import settings
 from app.core.logging_config import setup_logging
 from app.core.exceptions import AppException, app_exception_handler, global_exception_handler
 from app.controllers.webhook_controller import router as webhook_router
+from app.jobs.scheduler import start_scheduler, shutdown_scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    shutdown_scheduler()
 
 def create_app() -> FastAPI:
     setup_logging()
@@ -13,6 +21,7 @@ def create_app() -> FastAPI:
         version="1.0.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
+        lifespan=lifespan
     )
 
     app.add_exception_handler(AppException, app_exception_handler)
