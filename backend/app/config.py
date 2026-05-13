@@ -14,4 +14,6 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-settings = Settings()
+settings = Settings(
+    salla_event_name="abandoned.cart.updated"
+)
