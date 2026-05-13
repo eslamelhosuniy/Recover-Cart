@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     salla_webhook_secret: str
     whatsapp_token: str
     whatsapp_phone_number_id: str
+    whatsapp_template_name: str = "abandoned_cart_reminder"
     app_env: str = "development"
     app_secret_key: str
     reminder_delay_hours: int = 1

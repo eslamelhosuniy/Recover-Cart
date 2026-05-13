@@ -54,7 +54,7 @@ class ReminderService:
         try:
             response = await self.whatsapp_service.send_template_message(
                 to_phone=full_phone,
-                template_name="abandoned_cart_reminder"
+                template_name=settings.whatsapp_template_name
             )
             
             msg_id = response.get("messages", [{}])[0].get("id")
