@@ -9,8 +9,13 @@ from app.config import settings
 from app.core.database import Base
 import app.models
 
+# Handle asyncpg SSL requirement for Alembic
+db_url = settings.database_url
+if "sslmode=" in db_url:
+    db_url = db_url.replace("sslmode=", "ssl=")
+
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
