@@ -1,109 +1,91 @@
-document.addEventListener('DOMContentLoaded', function() {
-    
-    // Sidebar Toggle
-    const toggleBtn = document.getElementById('toggle-sidebar');
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
+const API_BASE = 'http://localhost:8000/api/v1';
 
-    // Simple toggle for mobile view (can be expanded for desktop collapse)
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-    });
+const kpiElements = {
+    totalCarts: document.getElementById('kpi-total-carts'),
+    recoveredCarts: document.getElementById('kpi-recovered-carts'),
+    recoveryRate: document.getElementById('kpi-recovery-rate'),
+    totalRevenue: document.getElementById('kpi-total-revenue')
+};
 
-    // Chart.js Default styling to match theme
-    Chart.defaults.font.family = "'Cairo', sans-serif";
-    Chart.defaults.color = '#6B7280';
-    
-    // 1. Line Chart (Abandoned vs Recovered)
-    const ctxLine = document.getElementById('lineChart').getContext('2d');
-    new Chart(ctxLine, {
-        type: 'line',
-        data: {
-            labels: ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
-            datasets: [
-                {
-                    label: 'السلات المهجورة',
-                    data: [150, 180, 140, 210, 190, 230, 184],
-                    borderColor: '#2563EB',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                },
-                {
-                    label: 'مستردة',
-                    data: [40, 55, 30, 60, 50, 70, 37],
-                    borderColor: '#10B981',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    tension: 0.4,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top', align: 'end' }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#E5E7EB' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+const tableBody = document.querySelector('#carts-table tbody');
+const loadingOverlay = document.getElementById('loading-overlay');
+const refreshBtn = document.getElementById('refresh-btn');
 
-    // 2. Bar Chart (Messages Sent per day)
-    const ctxBar = document.getElementById('barChart').getContext('2d');
-    new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: ['السبت', 'الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
-            datasets: [{
-                label: 'رسائل واتساب مرسلة',
-                data: [140, 175, 130, 200, 180, 210, 115],
-                backgroundColor: '#3B82F6',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { borderDash: [2, 4], color: '#E5E7EB' } },
-                x: { grid: { display: false } }
-            }
-        }
-    });
+function showLoading() {
+    loadingOverlay.classList.add('active');
+}
 
-    // 3. Donut Chart (Message Status)
-    const ctxDonut = document.getElementById('donutChart').getContext('2d');
-    new Chart(ctxDonut, {
-        type: 'doughnut',
-        data: {
-            labels: ['تم الإرسال والنجاح', 'في الانتظار / قيد المعالجة', 'فشل الإرسال'],
-            datasets: [{
-                data: [85, 12, 3],
-                backgroundColor: [
-                    '#10B981', // Success
-                    '#F59E0B', // Warning/Pending
-                    '#EF4444'  // Error
-                ],
-                borderWidth: 0,
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
-    });
+function hideLoading() {
+    loadingOverlay.classList.remove('active');
+}
+
+async function fetchKPIs() {
+    try {
+        const response = await fetch(`${API_BASE}/dashboard/kpis`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        kpiElements.totalCarts.textContent = data.total_carts;
+        kpiElements.recoveredCarts.textContent = data.recovered_carts;
+        kpiElements.recoveryRate.textContent = `${data.recovery_rate}%`;
+        kpiElements.totalRevenue.textContent = `${data.total_revenue_recovered} ر.س`;
+    } catch (error) {
+        console.error("Error fetching KPIs:", error);
+    }
+}
+
+async function fetchCarts() {
+    try {
+        const response = await fetch(`${API_BASE}/carts?limit=5`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        
+        renderCartsTable(data.data);
+    } catch (error) {
+        console.error("Error fetching Carts:", error);
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">خطأ في تحميل البيانات</td></tr>';
+    }
+}
+
+function renderCartsTable(carts) {
+    if (!carts || carts.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد سلات حالياً</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = carts.map(cart => {
+        const date = new Date(cart.abandoned_at).toLocaleDateString('ar-EG', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        
+        const reminderStatus = cart.reminder_sent 
+            ? '<span class="status-badge status-success">تم الإرسال</span>'
+            : '<span class="status-badge status-pending">في الانتظار</span>';
+            
+        const recoveryStatus = cart.is_recovered 
+            ? '<span class="status-badge status-success">مسترجعة</span>'
+            : '<span class="status-badge status-pending">مهجورة</span>';
+
+        return `
+            <tr>
+                <td>#${cart.salla_cart_id.substring(0, 8)}</td>
+                <td>${cart.cart_value} ر.س</td>
+                <td>${date}</td>
+                <td>${reminderStatus}</td>
+                <td>${recoveryStatus}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function refreshDashboard() {
+    showLoading();
+    await Promise.all([fetchKPIs(), fetchCarts()]);
+    setTimeout(hideLoading, 500);
+}
+
+refreshBtn.addEventListener('click', refreshDashboard);
+
+document.addEventListener('DOMContentLoaded', () => {
+    refreshDashboard();
 });

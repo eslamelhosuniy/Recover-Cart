@@ -3,464 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم استرجاع السلات | Salla Cart Recovery</title>
-    
-    <!-- Google Fonts: Cairo -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Boxicons for Icons -->
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    
-    <!-- Custom CSS -->
+    <title>Recover - نظام استرجاع السلات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <div class="logo">
-                <i class='bx bx-cart-download text-primary'></i>
-                <span>ريكَـفَر</span>
+                <h2>🛒 Recover</h2>
             </div>
-            <button class="toggle-btn" id="toggle-sidebar">
-                <i class='bx bx-menu'></i>
-            </button>
-        </div>
+            <nav>
+                <a href="#" class="active"><i class="icon">📊</i> لوحة القيادة</a>
+                <a href="#"><i class="icon">🛍️</i> السلات المهجورة</a>
+                <a href="#"><i class="icon">👥</i> العملاء</a>
+                <a href="#"><i class="icon">⚙️</i> الإعدادات</a>
+            </nav>
+        </aside>
 
-        <ul class="nav-links">
-            <li class="active">
-                <a href="#">
-                    <i class='bx bx-grid-alt'></i>
-                    <span>الرئيسية</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-cart'></i>
-                    <span>السلات المهجورة</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-message-rounded-dots'></i>
-                    <span>الرسائل المرسلة</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-group'></i>
-                    <span>العملاء</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-pie-chart-alt-2'></i>
-                    <span>التحليلات</span>
-                </a>
-            </li>
-            <li class="nav-divider"></li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-store-alt'></i>
-                    <span>الربط مع سلة</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-list-ol'></i>
-                    <span>سجل العمليات Logs</span>
-                </a>
-            </li>
-            <li>
-                <a href="#">
-                    <i class='bx bx-cog'></i>
-                    <span>إعدادات النظام</span>
-                </a>
-            </li>
-        </ul>
-        
-        <div class="sidebar-footer">
-            <div class="system-status">
-                <div class="status-indicator active"></div>
-                <span>النظام يعمل</span>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        
-        <!-- Top Navbar -->
-        <header class="topbar">
-            <div class="store-info">
-                <div class="store-avatar">R</div>
-                <div class="store-details">
-                    <h4>متجر رياش</h4>
-                    <span class="badge badge-success">Salla Pro</span>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="header-title">
+                    <h1>نظرة عامة</h1>
+                    <p>مرحباً بك، إليك أداء متجرك اليوم</p>
                 </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="refresh-btn">تحديث البيانات</button>
+                </div>
+            </header>
+
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
             </div>
 
-            <div class="topbar-actions">
-                <div class="date-filter">
-                    <i class='bx bx-calendar'></i>
-                    <select>
-                        <option>آخر 7 أيام</option>
-                        <option>هذا الشهر</option>
-                        <option>الشهر الماضي</option>
-                        <option>مخصص...</option>
-                    </select>
-                </div>
-                
-                <button class="btn-icon" title="تحديث البيانات" onclick="location.reload()">
-                    <i class='bx bx-refresh'></i>
-                </button>
-
-                <div class="notifications">
-                    <button class="btn-icon">
-                        <i class='bx bx-bell'></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                </div>
-
-                <div class="system-toggle">
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="toggle-label">أتمتة الواتساب</span>
-                </div>
-
-                <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="User Profile">
-                </div>
-            </div>
-        </header>
-
-        <!-- Dashboard Content -->
-        <div class="dashboard-container">
-            
-            <div class="page-header">
-                <h2>نظرة عامة</h2>
-                <p>مرحباً بك، إليك أداء نظام استرجاع السلات المهجورة الخاص بك.</p>
-            </div>
-
-            <!-- KPI Cards -->
-            <div class="kpi-grid">
+            <!-- KPIs -->
+            <section class="kpis">
                 <div class="kpi-card">
-                    <div class="kpi-icon bg-light-blue">
-                        <i class='bx bx-shopping-bag text-primary'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">إجمالي السلات المتخلى عنها</p>
-                        <h3 class="kpi-value">1,284</h3>
-                        <div class="kpi-trend up">
-                            <i class='bx bx-trending-up'></i>
-                            <span>+12% عن الأسبوع الماضي</span>
-                        </div>
-                    </div>
+                    <h3>إجمالي السلات</h3>
+                    <div class="value" id="kpi-total-carts">0</div>
                 </div>
-
                 <div class="kpi-card">
-                    <div class="kpi-icon bg-light-green">
-                        <i class='bx bx-check-shield text-green'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">تم استرجاعها</p>
-                        <h3 class="kpi-value">342</h3>
-                        <div class="kpi-trend up">
-                            <i class='bx bx-trending-up'></i>
-                            <span>+5.4% عن الأسبوع الماضي</span>
-                        </div>
-                    </div>
+                    <h3>السلات المسترجعة</h3>
+                    <div class="value" id="kpi-recovered-carts">0</div>
                 </div>
-
                 <div class="kpi-card">
-                    <div class="kpi-icon bg-light-orange">
-                        <i class='bx bxl-whatsapp text-orange'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">تذكيرات مرسلة</p>
-                        <h3 class="kpi-value">1,150</h3>
-                        <div class="kpi-trend neutral">
-                            <i class='bx bx-minus'></i>
-                            <span>نفس المعدل تقريباً</span>
-                        </div>
-                    </div>
+                    <h3>نسبة الاسترجاع</h3>
+                    <div class="value" id="kpi-recovery-rate">0%</div>
                 </div>
+                <div class="kpi-card highlight">
+                    <h3>الأرباح المسترجعة</h3>
+                    <div class="value" id="kpi-total-revenue">0 ر.س</div>
+                </div>
+            </section>
 
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-light-purple">
-                        <i class='bx bx-line-chart text-purple'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">نسبة الاسترجاع</p>
-                        <h3 class="kpi-value">26.6%</h3>
-                        <div class="kpi-trend up">
-                            <i class='bx bx-trending-up'></i>
-                            <span>+2.1% عن الأسبوع الماضي</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-light-teal">
-                        <i class='bx bx-money text-teal'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">المبيعات المستردة</p>
-                        <h3 class="kpi-value">45,890 <span class="currency">ر.س</span></h3>
-                        <div class="kpi-trend up">
-                            <i class='bx bx-trending-up'></i>
-                            <span>+18% عن الأسبوع الماضي</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-icon bg-light-red">
-                        <i class='bx bx-error-circle text-red'></i>
-                    </div>
-                    <div class="kpi-info">
-                        <p class="kpi-title">رسائل فاشلة</p>
-                        <h3 class="kpi-value">18</h3>
-                        <div class="kpi-trend down">
-                            <i class='bx bx-trending-down'></i>
-                            <span>-4% عن الأسبوع الماضي</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Workflow Visual Section -->
-            <div class="section-card workflow-section">
-                <div class="section-header">
-                    <h3>حالة النظام (Live Workflow)</h3>
-                    <span class="badge badge-success pulse">نشط الآن</span>
-                </div>
-                
-                <div class="workflow-visualizer">
-                    <!-- Phase 1: Capture -->
-                    <div class="workflow-phase">
-                        <h4 class="phase-title">التقاط السلة</h4>
-                        <div class="flow-track">
-                            <div class="flow-step success">
-                                <i class='bx bx-link-alt'></i>
-                                <span>سلة Webhook</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            <div class="flow-step success">
-                                <i class='bx bx-git-branch'></i>
-                                <span>فحص السلة</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            <div class="flow-step success">
-                                <i class='bx bx-data'></i>
-                                <span>استخراج البيانات</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            <div class="flow-step success">
-                                <i class='bx bx-server'></i>
-                                <span>حفظ السلة</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Phase 2: Action -->
-                    <div class="workflow-phase mt-4">
-                        <h4 class="phase-title">المعالجة والإرسال</h4>
-                        <div class="flow-track">
-                            <div class="flow-step pending">
-                                <i class='bx bx-time-five'></i>
-                                <span>فحص كل ساعة</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            <div class="flow-step pending">
-                                <i class='bx bx-list-check'></i>
-                                <span>جلب السلات المعلقة</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            <div class="flow-step primary">
-                                <i class='bx bxl-whatsapp'></i>
-                                <span>إرسال واتساب</span>
-                            </div>
-                            <div class="flow-arrow"><i class='bx bx-left-arrow-alt'></i></div>
-                            
-                            <!-- Branching -->
-                            <div class="flow-branch">
-                                <div class="flow-step info">
-                                    <i class='bx bx-radar'></i>
-                                    <span>فحص الحالة</span>
-                                </div>
-                                <div class="branch-paths">
-                                    <div class="path success-path">
-                                        <div class="flow-arrow-curved down"><i class='bx bx-left-arrow-alt'></i></div>
-                                        <div class="flow-step success">
-                                            <i class='bx bx-check-double'></i>
-                                            <span>تم الإرسال (تحديث DB)</span>
-                                        </div>
-                                    </div>
-                                    <div class="path error-path">
-                                        <div class="flow-arrow-curved up"><i class='bx bx-left-arrow-alt'></i></div>
-                                        <div class="flow-step error">
-                                            <i class='bx bx-x-circle'></i>
-                                            <span>فشل (تحديث DB)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts Section -->
-            <div class="charts-grid">
-                <!-- Line Chart -->
-                <div class="section-card chart-card">
-                    <div class="section-header">
-                        <h3>السلات المهجورة والمستردة</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="lineChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Donut Chart -->
-                <div class="section-card chart-card">
-                    <div class="section-header">
-                        <h3>حالة رسائل الواتساب</h3>
-                    </div>
-                    <div class="chart-container donut-container">
-                        <canvas id="donutChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Bar Chart -->
-                <div class="section-card chart-card">
-                    <div class="section-header">
-                        <h3>الرسائل المرسلة يومياً</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Funnel Chart (Simulated with bars) -->
-                <div class="section-card chart-card">
-                    <div class="section-header">
-                        <h3>قمع التحويل (Funnel)</h3>
-                    </div>
-                    <div class="funnel-container">
-                        <div class="funnel-step">
-                            <div class="step-label">إجمالي السلات (1,284)</div>
-                            <div class="step-bar" style="width: 100%; background: #E5E7EB;"></div>
-                        </div>
-                        <div class="funnel-step">
-                            <div class="step-label">تم إرسال رسالة (1,150)</div>
-                            <div class="step-bar" style="width: 89%; background: #60A5FA;"></div>
-                        </div>
-                        <div class="funnel-step">
-                            <div class="step-label">تم قراءة الرسالة (840)</div>
-                            <div class="step-bar" style="width: 65%; background: #34D399;"></div>
-                        </div>
-                        <div class="funnel-step">
-                            <div class="step-label">تم الشراء واسترجاع السلة (342)</div>
-                            <div class="step-bar" style="width: 26%; background: #10B981;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Table Section -->
-            <div class="section-card">
-                <div class="section-header">
-                    <h3>أحدث السلات المهجورة</h3>
-                    <div class="table-actions">
-                        <div class="search-box">
-                            <i class='bx bx-search'></i>
-                            <input type="text" placeholder="بحث برقم السلة أو الهاتف...">
-                        </div>
-                        <button class="btn btn-outline"><i class='bx bx-filter-alt'></i> تصفية</button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table">
+            <!-- Data Table -->
+            <section class="recent-carts">
+                <h2>أحدث السلات المهجورة</h2>
+                <div class="table-container">
+                    <table id="carts-table">
                         <thead>
                             <tr>
                                 <th>رقم السلة</th>
-                                <th>اسم العميل</th>
-                                <th>رقم الهاتف</th>
-                                <th>قيمة السلة</th>
-                                <th>وقت الترك</th>
-                                <th>حالة الرسالة</th>
-                                <th>الاسترجاع</th>
-                                <th>إجراءات</th>
+                                <th>القيمة</th>
+                                <th>تاريخ الهجر</th>
+                                <th>حالة التذكير</th>
+                                <th>مسترجعة</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><a href="#" class="cart-id">#CRT-9821</a></td>
-                                <td>أحمد عبدالله</td>
-                                <td><span class="phone-number" dir="ltr">+966 50 123 4567</span></td>
-                                <td>450 ر.س</td>
-                                <td>منذ 15 دقيقة</td>
-                                <td><span class="status-badge status-pending">في الانتظار</span></td>
-                                <td><span class="status-badge status-gray">لم يتم</span></td>
-                                <td>
-                                    <button class="btn-action" title="إرسال يدوي"><i class='bx bxl-whatsapp'></i></button>
-                                    <button class="btn-action" title="التفاصيل"><i class='bx bx-show'></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="#" class="cart-id">#CRT-9820</a></td>
-                                <td>سارة محمد</td>
-                                <td><span class="phone-number" dir="ltr">+966 55 987 6543</span></td>
-                                <td>1,200 ر.س</td>
-                                <td>منذ ساعتين</td>
-                                <td><span class="status-badge status-success">تم الإرسال</span></td>
-                                <td><span class="status-badge status-success">مستردة</span></td>
-                                <td>
-                                    <button class="btn-action" title="التفاصيل"><i class='bx bx-show'></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="#" class="cart-id">#CRT-9819</a></td>
-                                <td>خالد فهد</td>
-                                <td><span class="phone-number" dir="ltr">+966 53 456 7890</span></td>
-                                <td>320 ر.س</td>
-                                <td>منذ 3 ساعات</td>
-                                <td><span class="status-badge status-success">تم الإرسال</span></td>
-                                <td><span class="status-badge status-gray">لم يتم</span></td>
-                                <td>
-                                    <button class="btn-action" title="التفاصيل"><i class='bx bx-show'></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><a href="#" class="cart-id">#CRT-9818</a></td>
-                                <td>نورة صالح</td>
-                                <td><span class="phone-number" dir="ltr">+966 59 111 2222</span></td>
-                                <td>890 ر.س</td>
-                                <td>منذ 5 ساعات</td>
-                                <td><span class="status-badge status-error">فشل الإرسال</span></td>
-                                <td><span class="status-badge status-gray">لم يتم</span></td>
-                                <td>
-                                    <button class="btn-action" title="إعادة المحاولة"><i class='bx bx-refresh'></i></button>
-                                    <button class="btn-action" title="التفاصيل"><i class='bx bx-show'></i></button>
-                                </td>
-                            </tr>
+                            <!-- Data will be loaded here via JS -->
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-        </div>
-    </main>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            </section>
+        </main>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
