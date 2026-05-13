@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/v1';
+const API_BASE = 'https://recover-a8a6585e.fastapicloud.dev/api/v1';
 
 const kpiElements = {
     totalCarts: document.getElementById('kpi-total-carts'),

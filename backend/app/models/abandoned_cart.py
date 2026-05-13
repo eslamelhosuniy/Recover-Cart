@@ -12,6 +12,7 @@ class AbandonedCart(Base):
     salla_cart_id = Column(String, unique=True, index=True, nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     cart_value = Column(Numeric(10, 2), nullable=False)
+    checkout_url = Column(String, nullable=True)
     event_type = Column(String, default="order.abandoned", nullable=False)
     reminder_sent = Column(Boolean, default=False)
     is_recovered = Column(Boolean, default=False)

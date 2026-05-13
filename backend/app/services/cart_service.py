@@ -44,11 +44,11 @@ class CartService:
             if not cart:
                 cart_in = CartCreate(
                     salla_cart_id=salla_cart_id,
-                    cart_value=data.get("amounts", {}).get("total", {}).get("amount", 0.0),
+                    cart_value=data.get("amounts", {}).get("total", {}).get("amount", 0.0) or data.get("total", {}).get("amount", 0.0),
                     event_type=event_type,
                     customer_id=customer.id,
                     abandoned_at=datetime.now(timezone.utc),
-                    cart_url=data.get("checkout_url")
+                    checkout_url=data.get("checkout_url")
                 )
                 await self.cart_repo.create(db, cart_in.model_dump())
                 logger.info(f"Successfully processed abandoned cart: {salla_cart_id}")

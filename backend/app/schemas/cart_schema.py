@@ -9,8 +9,7 @@ class CartBase(BaseModel):
     salla_cart_id: str
     cart_value: Decimal
     event_type: str = "order.abandoned"
-    cart_url: str 
-
+    checkout_url: Optional[str] = None
 class CartCreate(CartBase):
     customer_id: UUID
     abandoned_at: datetime
