@@ -11,7 +11,7 @@ async def test_salla_webhook_missing_signature(async_client):
 
 @pytest.mark.asyncio
 async def test_salla_webhook_valid_signature(async_client):
-    payload_json = b'{"event": "order.abandoned", "data": {"id": 123}}'
+    payload_json = f'{{"event": "{settings.salla_event_name}", "data": {{"id": 123}}}}'.encode('utf-8')
     secret = settings.salla_webhook_secret.encode('utf-8')
     valid_signature = hmac.new(secret, payload_json, hashlib.sha256).hexdigest()
     

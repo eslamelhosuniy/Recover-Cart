@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db
 from app.services.cart_service import CartService
+from app.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ async def salla_webhook(
 
     event = payload.get("event")
     
-    if event == "order.abandoned":
+    if event == settings.salla_event_name:
         await cart_service.process_abandoned_cart(db, payload)
     
     return {"status": "success", "message": "Webhook received"}
