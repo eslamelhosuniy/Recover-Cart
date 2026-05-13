@@ -18,6 +18,9 @@ class SettingsCreate(SettingsBase):
 class SettingsUpdate(SettingsBase):
     pass
 
+class EventNameUpdate(BaseModel):
+    event_name: str
+
 class SettingsResponse(SettingsBase):
     id: UUID
     store_name: str
