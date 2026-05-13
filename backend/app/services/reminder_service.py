@@ -2,14 +2,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_
 from datetime import datetime, timezone, timedelta
-from app.repositories.cart_repository import CartRepository
-from app.repositories.message_repository import MessageRepository
-from app.repositories.customer_repository import CustomerRepository
-from app.services.whatsapp_service import WhatsAppService
-from app.models.abandoned_cart import AbandonedCart
-from app.schemas.message_schema import MessageCreate
-from app.config import settings
 import logging
+
+from app.repositories import CartRepository, MessageRepository, CustomerRepository
+from app.services import WhatsAppService
+from app.models.abandoned_cart import AbandonedCart
+from app.schemas import MessageCreate
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
