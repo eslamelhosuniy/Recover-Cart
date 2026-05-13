@@ -1,7 +1,29 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.dependencies import get_db
+from app.repositories.settings_repository import SettingsRepository
+from app.schemas.settings_schema import SettingsResponse, SettingsUpdate, SettingsCreate
 
 router = APIRouter(prefix="/api/v1/settings", tags=["Settings"])
+settings_repo = SettingsRepository()
 
-@router.get("")
-async def get_settings():
-    return {"message": "Settings API implementation pending"}
+@router.get("", response_model=SettingsResponse)
+async def get_settings(db: AsyncSession = Depends(get_db)):
+    settings = await settings_repo.get_current_settings(db)
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not configured")
+    return settings
+
+@router.post("", response_model=SettingsResponse)
+async def create_settings(settings_in: SettingsCreate, db: AsyncSession = Depends(get_db)):
+    existing = await settings_repo.get_current_settings(db)
+    if existing:
+        raise HTTPException(status_code=400, detail="Settings already exist. Use PUT to update.")
+    return await settings_repo.create(db, settings_in.model_dump())
+
+@router.put("", response_model=SettingsResponse)
+async def update_settings(settings_in: SettingsUpdate, db: AsyncSession = Depends(get_db)):
+    settings = await settings_repo.get_current_settings(db)
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not configured")
+    return await settings_repo.update(db, settings, settings_in.model_dump(exclude_unset=True))
