@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.core.logging_config import setup_logging
 from app.core.exceptions import AppException, app_exception_handler, global_exception_handler
+from app.controllers.webhook_controller import router as webhook_router
 
 def create_app() -> FastAPI:
     setup_logging()
@@ -16,6 +17,8 @@ def create_app() -> FastAPI:
 
     app.add_exception_handler(AppException, app_exception_handler)
     app.add_exception_handler(Exception, global_exception_handler)
+
+    app.include_router(webhook_router)
 
     @app.get("/health")
     async def health_check():
