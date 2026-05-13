@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 import logging
 
 from app.repositories import CartRepository, MessageRepository, CustomerRepository
-from app.services import WhatsAppService
+from app.services.whatsapp_service import WhatsAppService
 from app.models.abandoned_cart import AbandonedCart
 from app.schemas import MessageCreate
 from app.config import settings
