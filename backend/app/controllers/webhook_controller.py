@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Dict, Any
 from app.core.dependencies import get_db
 from app.services.cart_service import CartService
 from app.config import settings
@@ -12,14 +13,9 @@ cart_service = CartService()
 
 @router.post("/salla")
 async def salla_webhook(
-    request: Request,
+    payload: Dict[str, Any],
     db: AsyncSession = Depends(get_db)
 ):
-    try:
-        payload = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
-
     event = payload.get("event")
     
     if event == settings.salla_event_name:
