@@ -10,7 +10,7 @@ venv/
 env.bak/
 venv.bak/
 node_modules/
-
+recover/
 # IDEs
 .vscode/
 .idea/

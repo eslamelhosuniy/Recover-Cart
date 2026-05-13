@@ -29,7 +29,7 @@ class CartService:
             if not customer:
                 cust_in = CustomerCreate(
                     salla_customer_id=salla_customer_id,
-                    full_name=f"{customer_data.get('first_name', '')} {customer_data.get('last_name', '')}".strip(),
+                    full_name=f"{customer_data.get('name', '')}".strip(),
                     mobile=customer_data.get("mobile", ""),
                     mobile_code=customer_data.get("mobile_code", ""),
                     email=customer_data.get("email")
@@ -47,7 +47,8 @@ class CartService:
                     cart_value=data.get("amounts", {}).get("total", {}).get("amount", 0.0),
                     event_type=event_type,
                     customer_id=customer.id,
-                    abandoned_at=datetime.now(timezone.utc)
+                    abandoned_at=datetime.now(timezone.utc),
+                    cart_url=data.get("checkout_url")
                 )
                 await self.cart_repo.create(db, cart_in.model_dump())
                 logger.info(f"Successfully processed abandoned cart: {salla_cart_id}")
