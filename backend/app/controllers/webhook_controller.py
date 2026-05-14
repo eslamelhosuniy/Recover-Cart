@@ -18,7 +18,7 @@ async def salla_webhook(
 ):
     event = payload.get("event")
     
-    if event == settings.event_name:
-        await cart_service.process_abandoned_cart(db, payload)
+    # if event == settings.event_name:
+    await cart_service.process_abandoned_cart(db, payload)
     
     return {"status": "success", "message": "Webhook received"}

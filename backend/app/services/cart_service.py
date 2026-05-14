@@ -17,8 +17,8 @@ class CartService:
     async def process_abandoned_cart(self, db: AsyncSession, payload: dict) -> None:
         try:
             event_type = payload.get("event")
-            if event_type != settings.event_name:
-                return
+            # if event_type != settings.event_name:
+            #     return
 
             data = payload.get("data", {})
             customer_data = data.get("customer", {})
