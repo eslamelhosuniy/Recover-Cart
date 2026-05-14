@@ -51,9 +51,46 @@ class ReminderService:
         full_phone = f"{customer.mobile_code}{customer.mobile}"
         
         try:
+            customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
+            checkout_url = cart.checkout_url or "https://reiash.com/cart"
+            coupon = settings.coupon_code or "رياشن للمفروشات"
+
+            components = [
+                {
+                    "type": "header",
+                    "parameters": [
+                        {
+                            "type": "text",
+                            "text": customer_name
+                        }
+                    ]
+                },
+                {
+                    "type": "body",
+                    "parameters": [
+                        {
+                            "type": "text",
+                            "text": coupon
+                        }
+                    ]
+                },
+                {
+                    "type": "button",
+                    "sub_type": "url",
+                    "index": "0",
+                    "parameters": [
+                        {
+                            "type": "text",
+                            "text": checkout_url
+                        }
+                    ]
+                }
+            ]
+
             response = await self.whatsapp_service.send_template_message(
                 to_phone=full_phone,
-                template_name=settings.whatsapp_template_name
+                template_name=settings.whatsapp_template_name,
+                components=components
             )
             
             msg_id = response.get("messages", [{}])[0].get("id")

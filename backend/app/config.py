@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     whatsapp_token: str
     whatsapp_phone_number_id: str
     whatsapp_template_name: str = "abandoned_cart_reminder"
+    coupon_code: str = ""
     event_name: str = Field(default="abandoned.cart.updated", alias="SALLA_EVENT_NAME")
     app_env: str = "development"
     app_secret_key: str

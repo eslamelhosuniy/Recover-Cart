@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class WhatsAppService:
     BASE_URL = "https://graph.facebook.com/v17.0"
 
-    async def send_template_message(self, to_phone: str, template_name: str, language_code: str = "ar") -> dict:
+    async def send_template_message(self, to_phone: str, template_name: str, language_code: str = "ar", components: list = None) -> dict:
         url = f"{self.BASE_URL}/{settings.whatsapp_phone_number_id}/messages"
         headers = {
             "Authorization": f"Bearer {settings.whatsapp_token}",
@@ -27,6 +27,9 @@ class WhatsAppService:
                 }
             }
         }
+        
+        if components:
+            payload["template"]["components"] = components
 
         try:
             async with httpx.AsyncClient() as client:
