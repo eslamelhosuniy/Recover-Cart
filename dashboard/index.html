@@ -3,65 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recover - نظام استرجاع السلات</title>
+    <title>لوحة القيادة - Recover</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <link rel="stylesheet" href="../assets/shared.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <h2>🛒 Recover</h2>
+                <h2>
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    Recover
+                </h2>
             </div>
+
             <nav>
-                <a href="#" class="active"><i class="icon">📊</i> لوحة القيادة</a>
-                <a href="#"><i class="icon">🛍️</i> السلات المهجورة</a>
-                <a href="#"><i class="icon">👥</i> العملاء</a>
-                <a href="#"><i class="icon">⚙️</i> الإعدادات</a>
+                <a href="dashboard.html" class="active">
+                    <i class="fa-solid fa-chart-line icon"></i>
+                    لوحة القيادة
+                </a>
+
+                <a href="carts.html">
+                    <i class="fa-solid fa-cart-shopping icon"></i>
+                    السلات المهجورة
+                </a>
+
+                <a href="customers.html">
+                    <i class="fa-solid fa-users icon"></i>
+                    العملاء
+                </a>
+
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear icon"></i>
+                    الإعدادات
+                </a>
             </nav>
         </aside>
 
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content page-dashboard">
             <header>
-                <div class="header-title">
-                    <h1>نظرة عامة</h1>
-                    <p>مرحباً بك، إليك أداء متجرك اليوم</p>
+                <div style="display:flex; align-items:center; width:100%; justify-content:space-between; gap:1rem;">
+                    <button class="menu-toggle" id="menu-toggle" aria-label="القائمة">
+                        <span></span><span></span><span></span>
+                    </button>
+
+                    <div class="header-title">
+                        <h1>نظرة عامة</h1>
+                        <p>مرحباً بك، إليك أداء متجرك اليوم</p>
+                    </div>
                 </div>
+
                 <div class="header-actions">
-                    <button class="btn-primary" id="refresh-btn">تحديث البيانات</button>
+                    <button class="btn btn-primary" id="refresh-btn">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        تحديث البيانات
+                    </button>
                 </div>
             </header>
 
-            <div class="loading-overlay" id="loading-overlay">
-                <div class="spinner"></div>
-            </div>
-
             <!-- KPIs -->
-            <section class="kpis">
+            <section class="kpis" id="dashboard-kpis">
                 <div class="kpi-card">
                     <h3>إجمالي السلات</h3>
                     <div class="value" id="kpi-total-carts">0</div>
+                    <div class="subtext">
+                        <i class="fa-regular fa-calendar"></i>
+                        آخر 30 يوم
+                    </div>
                 </div>
+
                 <div class="kpi-card">
                     <h3>السلات المسترجعة</h3>
                     <div class="value" id="kpi-recovered-carts">0</div>
+                    <div class="subtext">
+                        <i class="fa-solid fa-circle-check"></i>
+                        تم الشراء بنجاح
+                    </div>
                 </div>
+
                 <div class="kpi-card">
                     <h3>نسبة الاسترجاع</h3>
                     <div class="value" id="kpi-recovery-rate">0%</div>
+                    <div class="subtext trend-up">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        12% عن الشهر الماضي
+                    </div>
                 </div>
+
                 <div class="kpi-card highlight">
                     <h3>الأرباح المسترجعة</h3>
                     <div class="value" id="kpi-total-revenue">0 ر.س</div>
+                    <div class="subtext">
+                        <i class="fa-solid fa-sack-dollar"></i>
+                        إيرادات مباشرة
+                    </div>
                 </div>
             </section>
 
-            <!-- Data Table -->
-            <section class="recent-carts">
-                <h2>أحدث السلات المهجورة</h2>
-                <div class="table-container">
+            <!-- Recent Carts Table -->
+            <section class="recent-carts card">
+                <div class="card-header">
+                    <h2 class="card-title">أحدث السلات المهجورة</h2>
+
+                    <a href="carts.html" class="btn btn-secondary btn-sm">
+                        عرض الكل
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+
+                <div class="table-responsive">
                     <table id="carts-table">
                         <thead>
                             <tr>
@@ -70,16 +131,29 @@
                                 <th>تاريخ الهجر</th>
                                 <th>حالة التذكير</th>
                                 <th>مسترجعة</th>
+                                <th class="hide-mobile">إجراءات</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Data will be loaded here via JS -->
+
+                        <tbody id="carts-tbody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    جاري تحميل البيانات...
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </section>
+
+            <!-- Shared Loading Overlay -->
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
+            </div>
         </main>
     </div>
+
+    <script src="../assets/shared.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
