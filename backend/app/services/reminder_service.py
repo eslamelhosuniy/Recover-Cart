@@ -67,6 +67,7 @@ class ReminderService:
                     "type": "header",
                     "parameters": [
                         {
+                            "parameter_name": "name",
                             "type": "text",
                             "text": customer_name
                         }
@@ -76,6 +77,7 @@ class ReminderService:
                     "type": "body",
                     "parameters": [
                         {
+                            "parameter_name": "cupon",
                             "type": "text",
                             "text": coupon
                         }

@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class WhatsAppService:
-    BASE_URL = "https://graph.facebook.com/v17.0"
+    BASE_URL = "https://graph.facebook.com/v25.0"
 
     async def send_template_message(self, to_phone: str, template_name: str, language_code: str = "ar", components: list = None) -> dict:
         url = f"{self.BASE_URL}/{settings.whatsapp_phone_number_id}/messages"
@@ -30,6 +30,8 @@ class WhatsAppService:
         
         if components:
             payload["template"]["components"] = components
+
+        logger.info(f"WhatsApp Payload: {payload}")
 
         try:
             async with httpx.AsyncClient() as client:
