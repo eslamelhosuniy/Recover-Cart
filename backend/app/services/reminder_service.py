@@ -30,7 +30,8 @@ class ReminderService:
                 and_(
                     AbandonedCart.reminder_sent == False,
                     AbandonedCart.is_recovered == False,
-                    AbandonedCart.abandoned_at <= threshold_time
+                    AbandonedCart.abandoned_at <= threshold_time,
+                    AbandonedCart.event_type.startswith("abandoned")
                 )
             )
         )
@@ -40,6 +41,12 @@ class ReminderService:
 
         for cart in pending_carts:
             await self._send_reminder_for_cart(db, cart)
+
+    async def send_manual_reminder(self, db: AsyncSession, cart_id) -> None:
+        cart = await self.cart_repo.get_by_id(db, cart_id)
+        if not cart:
+            raise Exception("Cart not found")
+        await self._send_reminder_for_cart(db, cart)
 
     async def _send_reminder_for_cart(self, db: AsyncSession, cart: AbandonedCart) -> None:
         customer = await self.customer_repo.get_by_id(db, cart.customer_id)
