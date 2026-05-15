@@ -10,7 +10,12 @@ if "sslmode=" in db_url:
 engine = create_async_engine(
     db_url,
     echo=(settings.app_env == "development"),
-    future=True
+    future=True,
+    pool_pre_ping=True,      # فحص الاتصال قبل استخدامه (لحل مشكلة انقطاع الاتصال)
+    pool_recycle=1800,       # إعادة تدوير الاتصالات كل 30 دقيقة
+    pool_size=5,             # عدد الاتصالات الأساسية
+    max_overflow=10,         # أقصى عدد للاتصالات الإضافية وقت الذروة
+    pool_timeout=30          # الانتظار حتى 30 ثانية للاتصال (مهم جداً أثناء استيقاظ Neon)
 )
 
 AsyncSessionLocal = async_sessionmaker(
