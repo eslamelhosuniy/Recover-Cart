@@ -42,9 +42,27 @@ class CartService:
             cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id)
             
             if not cart:
+                cart_value = 0.0
+                try:
+                    total = data.get("total")
+                    if isinstance(total, dict):
+                        cart_value = float(total.get("amount", 0.0))
+                    elif total is not None:
+                        cart_value = float(total)
+                    else:
+                        amounts = data.get("amounts", {})
+                        if isinstance(amounts, dict):
+                            amt_total = amounts.get("total")
+                            if isinstance(amt_total, dict):
+                                cart_value = float(amt_total.get("amount", 0.0))
+                            elif amt_total is not None:
+                                cart_value = float(amt_total)
+                except (ValueError, TypeError):
+                    pass
+
                 cart_in = CartCreate(
                     salla_cart_id=salla_cart_id,
-                    cart_value=data.get("amounts", {}).get("total", {}).get("amount", 0.0) or data.get("total", {}).get("amount", 0.0),
+                    cart_value=cart_value,
                     event_type=event_type,
                     customer_id=customer.id,
                     abandoned_at=datetime.now(timezone.utc),
