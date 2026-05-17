@@ -152,7 +152,7 @@ export default function RegisteredCustomers() {
                           color: u.is_admin ? 'var(--gold)' : 'var(--accent)',
                           display: 'flex',
                           alignItems: 'center',
-                          justify: 'center',
+                          justifyContent: 'center',
                           fontSize: '1rem',
                           fontWeight: '800'
                         }}
