@@ -7,7 +7,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://recover-a8a6585e.fastapicloud.dev',
+        target: 'http://localhost:8000/api/v1/',
+        // target: 'https://recover-a8a6585e.fastapicloud.dev',
         changeOrigin: true,
         secure: true,
       },

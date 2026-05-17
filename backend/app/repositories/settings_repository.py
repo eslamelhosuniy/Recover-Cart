@@ -8,6 +8,6 @@ class SettingsRepository(BaseRepository[StoreSettings]):
     def __init__(self):
         super().__init__(StoreSettings)
 
-    async def get_current_settings(self, db: AsyncSession) -> Optional[StoreSettings]:
-        result = await db.execute(select(self.model).limit(1))
+    async def get_current_settings(self, db: AsyncSession, user_id: str) -> Optional[StoreSettings]:
+        result = await db.execute(select(self.model).where(self.model.user_id == user_id).limit(1))
         return result.scalars().first()

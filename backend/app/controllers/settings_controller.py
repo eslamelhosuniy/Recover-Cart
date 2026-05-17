@@ -4,27 +4,43 @@ from app.core.dependencies import get_db
 from app.repositories.settings_repository import SettingsRepository
 from app.schemas.settings_schema import SettingsResponse, SettingsUpdate, SettingsCreate, EventNameUpdate
 from app.config import settings
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/settings", tags=["Settings"])
 settings_repo = SettingsRepository()
 
 @router.get("", response_model=SettingsResponse)
-async def get_settings(db: AsyncSession = Depends(get_db)):
-    settings = await settings_repo.get_current_settings(db)
+async def get_settings(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    settings = await settings_repo.get_current_settings(db, current_user.id)
     if not settings:
         raise HTTPException(status_code=404, detail="Settings not configured")
     return settings
 
 @router.post("", response_model=SettingsResponse)
-async def create_settings(settings_in: SettingsCreate, db: AsyncSession = Depends(get_db)):
-    existing = await settings_repo.get_current_settings(db)
+async def create_settings(
+    settings_in: SettingsCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    existing = await settings_repo.get_current_settings(db, current_user.id)
     if existing:
         raise HTTPException(status_code=400, detail="Settings already exist. Use PUT to update.")
-    return await settings_repo.create(db, settings_in.model_dump())
+    
+    data = settings_in.model_dump()
+    data["user_id"] = current_user.id
+    return await settings_repo.create(db, data)
 
 @router.put("", response_model=SettingsResponse)
-async def update_settings(settings_in: SettingsUpdate, db: AsyncSession = Depends(get_db)):
-    settings = await settings_repo.get_current_settings(db)
+async def update_settings(
+    settings_in: SettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    settings = await settings_repo.get_current_settings(db, current_user.id)
     if not settings:
         raise HTTPException(status_code=404, detail="Settings not configured")
     return await settings_repo.update(db, settings, settings_in.model_dump(exclude_unset=True))

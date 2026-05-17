@@ -7,6 +7,8 @@ export default function Settings() {
     store_name: '',
     salla_api_key: '',
     whatsapp_phone_id: '',
+    whatsapp_access_token: '',
+    whatsapp_template_name: 'hello_world',
     automation_enabled: true,
     reminder_delay_hours: 1,
     max_retries: 3,
@@ -131,6 +133,35 @@ export default function Settings() {
             dir="ltr"
             placeholder="أدخل الـ Token السري"
           />
+        </div>
+
+        <div className="form-row mb-4">
+          <div className="form-group">
+            <label className="form-label">WhatsApp Access Token</label>
+            <input
+              type="password"
+              name="whatsapp_access_token"
+              className="form-input"
+              value={formData.whatsapp_access_token}
+              onChange={handleChange}
+              required
+              dir="ltr"
+              placeholder="EAA..."
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">اسم قالب واتساب (Template Name)</label>
+            <input
+              type="text"
+              name="whatsapp_template_name"
+              className="form-input"
+              value={formData.whatsapp_template_name}
+              onChange={handleChange}
+              required
+              dir="ltr"
+              placeholder="مثال: hello_world"
+            />
+          </div>
         </div>
 
         <div className="form-row">
