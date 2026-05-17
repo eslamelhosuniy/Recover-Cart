@@ -76,7 +76,7 @@ class ReminderService:
         try:
             customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
             checkout_url = cart.checkout_url or "https://reiash.com/cart"
-            coupon = "رياشن للمفروشات"
+            coupon = store_settings.coupon_code or "رياشن للمفروشات"
 
             components = [
                 {

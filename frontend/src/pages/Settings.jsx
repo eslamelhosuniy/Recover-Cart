@@ -9,6 +9,7 @@ export default function Settings() {
     whatsapp_access_token: '',
     whatsapp_template_name: 'hello_world',
     automation_enabled: true,
+    coupon_code: '',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -99,18 +100,32 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="form-group mb-3">
-            <label className="form-label">مفتاح الربط (Salla Webhook Token Key)</label>
-            <input
-              type="password"
-              name="salla_api_key"
-              className="form-input"
-              value={formData.salla_api_key}
-              onChange={handleChange}
-              required
-              dir="ltr"
-              placeholder="أدخل الـ Token السري الخاص بـ Salla"
-            />
+          <div className="form-row mb-3">
+            <div className="form-group">
+              <label className="form-label">مفتاح الربط (Salla Webhook Token Key)</label>
+              <input
+                type="password"
+                name="salla_api_key"
+                className="form-input"
+                value={formData.salla_api_key}
+                onChange={handleChange}
+                required
+                dir="ltr"
+                placeholder="أدخل الـ Token السري الخاص بـ Salla"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">رمز الكوبون الافتراضي (Default Coupon Code)</label>
+              <input
+                type="text"
+                name="coupon_code"
+                className="form-input"
+                value={formData.coupon_code}
+                onChange={handleChange}
+                required
+                placeholder="مثال: رياشن للمفروشات"
+              />
+            </div>
           </div>
         </div>
 

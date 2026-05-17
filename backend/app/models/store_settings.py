@@ -14,5 +14,6 @@ class StoreSettings(Base):
     whatsapp_access_token = Column(String, nullable=False, default="")
     whatsapp_template_name = Column(String, nullable=False, default="hello_world")
     automation_enabled = Column(Boolean, default=True)
+    coupon_code = Column(String, nullable=True)
 
     user = relationship("User", backref="settings")

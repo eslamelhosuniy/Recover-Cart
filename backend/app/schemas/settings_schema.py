@@ -8,12 +8,14 @@ class SettingsBase(BaseModel):
     whatsapp_access_token: Optional[str] = None
     whatsapp_template_name: Optional[str] = None
     automation_enabled: Optional[bool] = True
+    coupon_code: Optional[str] = None
 
 class SettingsCreate(SettingsBase):
     salla_api_key: str
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str
+    coupon_code: str
 
 class SettingsUpdate(SettingsBase):
     pass
@@ -25,6 +27,7 @@ class SettingsResponse(SettingsBase):
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str
+    coupon_code: Optional[str] = None
 
     class Config:
         from_attributes = True
