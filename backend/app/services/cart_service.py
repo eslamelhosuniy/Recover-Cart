@@ -34,8 +34,6 @@ class CartService:
                 cust_data = cust_in.model_dump()
                 cust_data["user_id"] = user_id
                 customer = await self.customer_repo.create(db, cust_data)
-            else:
-                await self.customer_repo.update(db, customer, {"total_carts": customer.total_carts + 1})
 
             salla_cart_id = str(data.get("id"))
             cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id, user_id)

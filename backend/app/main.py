@@ -16,22 +16,33 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     setup_logging()
-    
+
+    # Restrict docs to non-production environments
+    docs_url = "/api/docs" if settings.app_env != "production" else None
+    redoc_url = "/api/redoc" if settings.app_env != "production" else None
+
     app = FastAPI(
         title="Recover Cart API",
         description="Automated abandoned cart recovery system",
         version="1.0.0",
-        docs_url="/api/docs",
-        redoc_url="/api/redoc",
+        docs_url=docs_url,
+        redoc_url=redoc_url,
         lifespan=lifespan
+    )
+
+    # CORS: restrict to frontend origin in production
+    allowed_origins = (
+        settings.allowed_origins
+        if settings.app_env == "production"
+        else ["*"]
     )
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Salla-Signature"],
     )
 
     app.add_exception_handler(AppException, app_exception_handler)
@@ -42,7 +53,8 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health_check():
-        return {"status": "ok", "env": settings.app_env}
+        # Don't expose environment info publicly
+        return {"status": "ok"}
 
     return app
 

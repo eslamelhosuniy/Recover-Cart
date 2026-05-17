@@ -45,31 +45,46 @@ class ReminderService:
             if not store_settings:
                 continue
             
-            threshold_time = datetime.now(timezone.utc) - timedelta(hours=1)
+            threshold_time = datetime.now(timezone.utc) - timedelta(hours=settings.reminder_delay_hours)
             
             if cart.abandoned_at <= threshold_time:
-                await self._send_reminder_for_cart(db, cart, store_settings)
+                try:
+                    await self.send_reminder_for_cart(db, cart, store_settings)
+                except Exception as e:
+                    logger.warning(f"Skipping cart {cart.id} in batch: {str(e)}")
 
-    async def send_manual_reminder(self, db: AsyncSession, cart_id) -> None:
-        cart = await self.cart_repo.get_by_id(db, cart_id)
-        if not cart:
-            raise Exception("Cart not found")
-        store_settings = await self.settings_repo.get_current_settings(db, str(cart.user_id))
-        await self._send_reminder_for_cart(db, cart, store_settings)
-
-    async def _send_reminder_for_cart(self, db: AsyncSession, cart: AbandonedCart, store_settings: StoreSettings = None) -> None:
+    async def send_reminder_for_cart(self, db: AsyncSession, cart: AbandonedCart, store_settings: StoreSettings = None) -> None:
         if not store_settings:
             store_settings = await self.settings_repo.get_current_settings(db, str(cart.user_id))
             
         if not store_settings:
-            logger.warning(f"No store settings found for user {cart.user_id}. Cannot send reminder.")
-            return
+            raise ValueError("لا توجد إعدادات متجر مكونة. يرجى إعداد الإعدادات أولاً.")
 
         customer = await self.customer_repo.get_by_id(db, cart.customer_id)
         
         if not customer or not customer.mobile:
-            logger.warning(f"No valid mobile for cart {cart.id}")
-            return
+            raise ValueError("لا يوجد رقم جوال صالح لهذا العميل.")
+
+        # Don't send if a message was sent to this customer in the last 24 hours
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import select
+        from app.models.message_log import MessageLog
+        
+        limit_time = datetime.now(timezone.utc) - timedelta(hours=24)
+        stmt = (
+            select(MessageLog)
+            .join(AbandonedCart, MessageLog.cart_id == AbandonedCart.id)
+            .where(AbandonedCart.customer_id == cart.customer_id)
+            .where(MessageLog.sent_at >= limit_time)
+            .where(MessageLog.status.in_(["accepted", "sent"]))
+            .limit(1)
+        )
+        existing_log = (await db.execute(stmt)).scalars().first()
+        if existing_log:
+            logger.info(f"Skipping reminder for cart {cart.id} - customer received a message in the last 24 hours.")
+            if not cart.reminder_sent:
+                await self.cart_repo.update(db, cart, {"reminder_sent": True})
+            raise ValueError("تم إرسال رسالة لهذا العميل خلال آخر 24 ساعة. لا يمكن الإرسال مجدداً.")
 
         full_phone = f"{customer.mobile_code}{customer.mobile}"
         
@@ -139,3 +154,4 @@ class ReminderService:
             created_msg = await self.message_repo.create(db, msg_in.model_dump())
             await self.message_repo.update(db, created_msg, {"error_message": str(e)})
             logger.error(f"Failed to process reminder for cart {cart.id}: {str(e)}")
+            raise  # re-raise so the controller can return the correct error to the client

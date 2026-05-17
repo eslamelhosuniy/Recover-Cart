@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 class SettingsBase(BaseModel):
-    salla_api_key: Optional[str] = None
+    salla_webhook_secret: Optional[str] = None
     whatsapp_phone_id: Optional[str] = None
     whatsapp_access_token: Optional[str] = None
     whatsapp_template_name: Optional[str] = None
@@ -11,7 +11,7 @@ class SettingsBase(BaseModel):
     coupon_code: Optional[str] = None
 
 class SettingsCreate(SettingsBase):
-    salla_api_key: str
+    salla_webhook_secret: str
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str
@@ -23,7 +23,7 @@ class SettingsUpdate(SettingsBase):
 class SettingsResponse(SettingsBase):
     id: UUID
     user_id: UUID
-    salla_api_key: str
+    salla_webhook_secret: str
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str

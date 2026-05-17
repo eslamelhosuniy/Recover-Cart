@@ -10,7 +10,7 @@ scheduler = AsyncIOScheduler()
 
 def start_scheduler():
     if not scheduler.running:
-        interval_minutes = 60
+        interval_minutes = max(15, settings.reminder_delay_hours * 60)
         scheduler.add_job(
             run_reminder_job,
             trigger=IntervalTrigger(minutes=interval_minutes),

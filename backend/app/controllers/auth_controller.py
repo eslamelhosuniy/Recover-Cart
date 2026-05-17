@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import func
 
 from app.core.dependencies import get_db
 from app.core.security import (
@@ -40,8 +41,8 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     Creates the first admin user. Subsequent calls require an existing admin token.
     Open on first run (no users exist), locked afterward.
     """
-    result = await db.execute(select(User))
-    existing_count = len(result.scalars().all())
+    result = await db.execute(select(func.count(User.id)))
+    existing_count = result.scalar() or 0
 
     if existing_count > 0:
         # After first user, only an admin can register new users.

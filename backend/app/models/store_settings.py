@@ -9,7 +9,7 @@ class StoreSettings(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
-    salla_api_key = Column(String, nullable=False)
+    salla_webhook_secret = Column(String, nullable=False)
     whatsapp_phone_id = Column(String, nullable=False)
     whatsapp_access_token = Column(String, nullable=False, default="")
     whatsapp_template_name = Column(String, nullable=False, default="hello_world")

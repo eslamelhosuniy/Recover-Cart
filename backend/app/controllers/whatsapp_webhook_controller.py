@@ -45,13 +45,15 @@ async def whatsapp_webhook_verify(
 ):
     """
     Meta webhook verification handshake.
-    Returns the challenge if verification passes.
+    Returns the challenge only if the verify token matches our secret.
     """
-    # Accept any verify token for now; tighten in production
-    if hub_mode == "subscribe" and hub_challenge:
+    from app.config import settings
+    expected_token = settings.app_secret_key  # reuse app secret as verify token
+    if hub_mode == "subscribe" and hub_challenge and hub_verify_token == expected_token:
         logger.info("WhatsApp webhook verified successfully")
         return int(hub_challenge)
-    return {"status": "ok"}
+    logger.warning("WhatsApp webhook verification failed — bad token or missing params")
+    return {"status": "forbidden"}
 
 
 @router.post("")

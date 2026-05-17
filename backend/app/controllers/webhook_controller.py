@@ -41,11 +41,12 @@ async def salla_webhook(
         logger.warning("Missing x-salla-signature header")
         raise HTTPException(status_code=401, detail="Missing signature")
         
-    secret = settings.salla_api_key.encode("utf-8")
+    secret = settings.salla_webhook_secret.encode("utf-8")
     computed_signature = hmac.new(secret, body, hashlib.sha256).hexdigest()
     
-    if computed_signature != x_salla_signature:
-        logger.warning(f"Invalid Salla signature. Expected: {computed_signature}, Got: {x_salla_signature}")
+    # Use constant-time comparison to prevent timing attacks
+    if not hmac.compare_digest(computed_signature, x_salla_signature):
+        logger.warning(f"Invalid Salla signature for user {user_id}")
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     # 4. Parse payload and process
