@@ -72,7 +72,22 @@ export default function Carts() {
               <tbody>
                 {data.map((cart) => (
                   <tr key={cart.id}>
-                    <td className="fw-bold text-muted">#{cart.salla_cart_id.substring(0, 8)}</td>
+                    <td className="fw-bold">
+                      {cart.checkout_url ? (
+                        <a 
+                          href={cart.checkout_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}
+                          title="الذهاب لصفحة إتمام الشراء"
+                        >
+                          #{cart.salla_cart_id.substring(0, 8)}
+                          <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '.75rem' }} />
+                        </a>
+                      ) : (
+                        <span className="text-muted">#{cart.salla_cart_id.substring(0, 8)}</span>
+                      )}
+                    </td>
                     <td>{cart.customer?.full_name || 'غير محدد'}</td>
                     <td dir="ltr" className="text-right">
                       {cart.customer ? `${cart.customer.mobile_code}${cart.customer.mobile}` : '-'}
