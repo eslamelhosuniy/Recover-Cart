@@ -15,6 +15,7 @@ async def get_error_logs(skip: int = 0, limit: int = 10, db: AsyncSession = Depe
     result = await db.execute(
         select(MessageLog)
         .where(MessageLog.status == "failed")
+        .order_by(MessageLog.sent_at.desc())
         .offset(skip)
         .limit(limit)
     )

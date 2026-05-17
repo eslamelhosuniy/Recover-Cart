@@ -21,9 +21,9 @@ class CartRepository(BaseRepository[AbandonedCart]):
         result = await db.execute(
             select(self.model)
             .options(selectinload(self.model.customer))
+            .order_by(self.model.created_at.desc())
             .offset(skip)
             .limit(limit)
-            .order_by(self.model.created_at.desc())
         )
         return result.scalars().all()
 
