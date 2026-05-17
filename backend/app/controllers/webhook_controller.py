@@ -54,6 +54,13 @@ async def salla_webhook(
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
         
+    # Validate the event name dynamically
+    event_name = payload.get("event")
+    from app.config import settings
+    if not event_name or event_name not in settings.accepted_events or settings.accepted_events[event_name] != "recover_salla":
+        logger.info(f"Ignoring webhook event '{event_name}' (not registered or invalid in accepted_events).")
+        return {"status": "success", "message": f"Event '{event_name}' ignored"}
+        
     await cart_service.process_abandoned_cart(db, payload, str(user.id))
     
     return {"status": "success", "message": "Webhook received and validated"}

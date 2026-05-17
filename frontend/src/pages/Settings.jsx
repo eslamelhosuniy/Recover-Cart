@@ -4,14 +4,11 @@ import Spinner from '../components/ui/Spinner'
 
 export default function Settings() {
   const [formData, setFormData] = useState({
-    store_name: '',
     salla_api_key: '',
     whatsapp_phone_id: '',
     whatsapp_access_token: '',
     whatsapp_template_name: 'hello_world',
     automation_enabled: true,
-    reminder_delay_hours: 1,
-    max_retries: 3,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -102,60 +99,18 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="form-row mb-3">
-            <div className="form-group">
-              <label className="form-label">اسم المتجر</label>
-              <input
-                type="text"
-                name="store_name"
-                className="form-input"
-                value={formData.store_name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">مفتاح الربط (Salla API Key)</label>
-              <input
-                type="password"
-                name="salla_api_key"
-                className="form-input"
-                value={formData.salla_api_key}
-                onChange={handleChange}
-                required
-                dir="ltr"
-                placeholder="أدخل الـ Token السري"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">تأخير الإرسال (بالساعات)</label>
-              <input
-                type="number"
-                name="reminder_delay_hours"
-                className="form-input"
-                value={formData.reminder_delay_hours}
-                onChange={handleChange}
-                min="1"
-                max="72"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">عدد محاولات إعادة الإرسال</label>
-              <input
-                type="number"
-                name="max_retries"
-                className="form-input"
-                value={formData.max_retries}
-                onChange={handleChange}
-                min="0"
-                max="5"
-                required
-              />
-            </div>
+          <div className="form-group mb-3">
+            <label className="form-label">مفتاح الربط (Salla Webhook Token Key)</label>
+            <input
+              type="password"
+              name="salla_api_key"
+              className="form-input"
+              value={formData.salla_api_key}
+              onChange={handleChange}
+              required
+              dir="ltr"
+              placeholder="أدخل الـ Token السري الخاص بـ Salla"
+            />
           </div>
         </div>
 

@@ -45,8 +45,7 @@ class ReminderService:
             if not store_settings:
                 continue
             
-            delay = store_settings.reminder_delay_hours or 1
-            threshold_time = datetime.now(timezone.utc) - timedelta(hours=delay)
+            threshold_time = datetime.now(timezone.utc) - timedelta(hours=1)
             
             if cart.abandoned_at <= threshold_time:
                 await self._send_reminder_for_cart(db, cart, store_settings)
@@ -77,7 +76,7 @@ class ReminderService:
         try:
             customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
             checkout_url = cart.checkout_url or "https://reiash.com/cart"
-            coupon = store_settings.store_name or "رياشن للمفروشات"
+            coupon = "رياشن للمفروشات"
 
             components = [
                 {

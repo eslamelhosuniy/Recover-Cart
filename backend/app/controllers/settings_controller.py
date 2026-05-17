@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db
 from app.repositories.settings_repository import SettingsRepository
-from app.schemas.settings_schema import SettingsResponse, SettingsUpdate, SettingsCreate, EventNameUpdate
-from app.config import settings
+from app.schemas.settings_schema import SettingsResponse, SettingsUpdate, SettingsCreate
 from app.core.security import get_current_user
 from app.models.user import User
 
@@ -44,15 +43,3 @@ async def update_settings(
     if not settings:
         raise HTTPException(status_code=404, detail="Settings not configured")
     return await settings_repo.update(db, settings, settings_in.model_dump(exclude_unset=True))
-
-@router.patch("/event-name")
-async def update_event_name(payload: EventNameUpdate):
-    """
-    Update the Salla event name at runtime.
-    """
-    settings.set_event_name(payload.event_name)
-    return {
-        "status": "success",
-        "message": "Event name updated successfully at runtime",
-        "new_event_name": settings.event_name
-    }
