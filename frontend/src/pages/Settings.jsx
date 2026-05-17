@@ -4,7 +4,7 @@ import Spinner from '../components/ui/Spinner'
 
 export default function Settings() {
   const [formData, setFormData] = useState({
-    salla_api_key: '',
+    salla_webhook_secret: '',
     whatsapp_phone_id: '',
     whatsapp_access_token: '',
     whatsapp_template_name: 'hello_world',
@@ -105,9 +105,9 @@ export default function Settings() {
               <label className="form-label">مفتاح الربط (Salla Webhook Token Key)</label>
               <input
                 type="password"
-                name="salla_api_key"
+                name="salla_webhook_secret"
                 className="form-input"
-                value={formData.salla_api_key}
+                value={formData.salla_webhook_secret || ''}
                 onChange={handleChange}
                 required
                 dir="ltr"
