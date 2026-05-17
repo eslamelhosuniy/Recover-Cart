@@ -3,13 +3,16 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime
 
+
 class MessageBase(BaseModel):
     status: str = "pending"
     channel: str = "whatsapp"
 
+
 class MessageCreate(MessageBase):
     cart_id: UUID
     whatsapp_msg_id: Optional[str] = None
+
 
 class MessageResponse(MessageBase):
     id: UUID
@@ -20,3 +23,11 @@ class MessageResponse(MessageBase):
     error_message: Optional[str]
 
     model_config = {"from_attributes": True}
+
+
+class MessageStatsResponse(BaseModel):
+    total: int
+    sent: int
+    read: int
+    failed: int
+    pending: int
