@@ -2,7 +2,6 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +11,9 @@ from app.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
 
-# ── password hashing ────────────────────────────────────────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
+# ── password hashing ────────────────────────────────────────────────────────
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 ALGORITHM = "HS256"
 
@@ -22,11 +21,16 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 
 # ── JWT ──────────────────────────────────────────────────────────────────────

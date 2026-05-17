@@ -33,7 +33,7 @@ export default function SignIn() {
             <i className="fa-solid fa-cart-shopping" />
           </div>
           <h1>تسجيل الدخول</h1>
-          <p>لوحة تحكم Recover</p>
+          <p>لوحة تحكم Recover Cart</p>
         </div>
 
         {error && (
