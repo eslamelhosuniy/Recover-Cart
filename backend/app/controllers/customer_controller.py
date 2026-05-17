@@ -2,21 +2,36 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
+from sqlalchemy.orm import selectinload
+from typing import List
+from uuid import UUID
+
 from app.core.dependencies import get_db
+from app.core.security import get_current_user
 from app.repositories.customer_repository import CustomerRepository
 from app.schemas.customer_schema import CustomerResponse
+from app.schemas.cart_schema import CartResponse
 from app.schemas.common import PaginatedResponse
 from app.models.customer import Customer
-from uuid import UUID
+from app.models.user import User
+from app.models.abandoned_cart import AbandonedCart
 
 router = APIRouter(prefix="/api/v1/customers", tags=["Customers"])
 customer_repo = CustomerRepository()
 
 
 @router.get("", response_model=PaginatedResponse[CustomerResponse])
-async def get_customers(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
-    customers = await customer_repo.get_all(db, skip=skip, limit=limit)
-    total_result = await db.execute(select(func.count(Customer.id)))
+async def get_customers(
+    skip: int = 0, 
+    limit: int = 10, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    customers = await customer_repo.get_all(db, user_id=current_user.id, skip=skip, limit=limit)
+    total_result = await db.execute(
+        select(func.count(Customer.id))
+        .where(Customer.user_id == current_user.id)
+    )
     total = total_result.scalar() or 0
     return PaginatedResponse(
         data=customers,
@@ -27,8 +42,38 @@ async def get_customers(skip: int = 0, limit: int = 10, db: AsyncSession = Depen
 
 
 @router.get("/{id}", response_model=CustomerResponse)
-async def get_customer(id: UUID, db: AsyncSession = Depends(get_db)):
+async def get_customer(
+    id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     customer = await customer_repo.get_by_id(db, id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+        
+    if customer.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this customer")
+        
     return customer
+
+
+@router.get("/{id}/carts", response_model=List[CartResponse])
+async def get_customer_carts(
+    id: UUID, 
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    customer = await customer_repo.get_by_id(db, id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="العميل غير موجود")
+        
+    if customer.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="ليس لديك صلاحية للوصول لبيانات هذا العميل")
+
+    result = await db.execute(
+        select(AbandonedCart)
+        .where(AbandonedCart.customer_id == id)
+        .options(selectinload(AbandonedCart.customer))
+        .order_by(AbandonedCart.abandoned_at.desc())
+    )
+    return result.scalars().all()

@@ -17,9 +17,10 @@ class CartRepository(BaseRepository[AbandonedCart]):
         )
         return result.scalars().first()
 
-    async def get_all(self, db: AsyncSession, skip: int = 0, limit: int = 10) -> List[AbandonedCart]:
+    async def get_all(self, db: AsyncSession, user_id: any, skip: int = 0, limit: int = 10) -> List[AbandonedCart]:
         result = await db.execute(
             select(self.model)
+            .where(self.model.user_id == user_id)
             .options(selectinload(self.model.customer))
             .order_by(self.model.created_at.desc())
             .offset(skip)
