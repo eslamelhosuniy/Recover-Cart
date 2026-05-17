@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Carts from './pages/Carts'
 import Messages from './pages/Messages'
 import Customers from './pages/Customers'
+import RegisteredCustomers from './pages/RegisteredCustomers'
 import Settings from './pages/Settings'
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="carts" element={<Carts />} />
             <Route path="messages" element={<Messages />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="registered-customers" element={<RegisteredCustomers />} />
             <Route path="settings" element={<Settings />} />
           </Route>
 

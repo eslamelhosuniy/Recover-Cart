@@ -77,67 +77,126 @@ export default function Settings() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group mb-4">
-          <label className="form-label">تمكين الأتمتة</label>
-          <div className="toggle-wrap">
-            <input
-              type="checkbox"
-              id="automation_enabled"
-              name="automation_enabled"
-              className="toggle-input"
-              checked={formData.automation_enabled}
-              onChange={handleChange}
-            />
-            <label htmlFor="automation_enabled" className="toggle-label"></label>
-            <span className="text-muted text-small">
-              عند التفعيل، سيقوم النظام بإرسال التذكيرات تلقائياً
-            </span>
+        {/* Section 1: General & Salla Settings */}
+        <div style={{ marginBottom: '2.5rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--accent)', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <i className="fa-solid fa-sliders" />
+            الإعدادات العامة وإعدادات سلة
+          </h3>
+
+          <div className="form-group mb-4">
+            <label className="form-label">تمكين الأتمتة</label>
+            <div className="toggle-wrap">
+              <input
+                type="checkbox"
+                id="automation_enabled"
+                name="automation_enabled"
+                className="toggle-input"
+                checked={formData.automation_enabled}
+                onChange={handleChange}
+              />
+              <label htmlFor="automation_enabled" className="toggle-label"></label>
+              <span className="text-muted text-small">
+                عند التفعيل، سيقوم النظام بإرسال التذكيرات تلقائياً
+              </span>
+            </div>
+          </div>
+
+          <div className="form-row mb-3">
+            <div className="form-group">
+              <label className="form-label">اسم المتجر</label>
+              <input
+                type="text"
+                name="store_name"
+                className="form-input"
+                value={formData.store_name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">مفتاح الربط (Salla API Key)</label>
+              <input
+                type="password"
+                name="salla_api_key"
+                className="form-input"
+                value={formData.salla_api_key}
+                onChange={handleChange}
+                required
+                dir="ltr"
+                placeholder="أدخل الـ Token السري"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">تأخير الإرسال (بالساعات)</label>
+              <input
+                type="number"
+                name="reminder_delay_hours"
+                className="form-input"
+                value={formData.reminder_delay_hours}
+                onChange={handleChange}
+                min="1"
+                max="72"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">عدد محاولات إعادة الإرسال</label>
+              <input
+                type="number"
+                name="max_retries"
+                className="form-input"
+                value={formData.max_retries}
+                onChange={handleChange}
+                min="0"
+                max="5"
+                required
+              />
+            </div>
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">اسم المتجر</label>
-            <input
-              type="text"
-              name="store_name"
-              className="form-input"
-              value={formData.store_name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">معرف رقم واتساب (Phone ID)</label>
-            <input
-              type="text"
-              name="whatsapp_phone_id"
-              className="form-input"
-              value={formData.whatsapp_phone_id}
-              onChange={handleChange}
-              required
-              dir="ltr"
-            />
-          </div>
-        </div>
+        {/* Section 2: WhatsApp Gateway Settings */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--accent)', marginBottom: '1.25rem', borderBottom: '1px solid var(--border)', paddingBottom: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <i className="fa-brands fa-whatsapp" />
+            إعدادات بوابة واتساب (WhatsApp Business API)
+          </h3>
 
-        <div className="form-group mb-4">
-          <label className="form-label">مفتاح الربط (Salla API Key)</label>
-          <input
-            type="password"
-            name="salla_api_key"
-            className="form-input"
-            value={formData.salla_api_key}
-            onChange={handleChange}
-            required
-            dir="ltr"
-            placeholder="أدخل الـ Token السري"
-          />
-        </div>
+          <div className="form-row mb-3">
+            <div className="form-group">
+              <label className="form-label">معرف رقم واتساب (Phone ID)</label>
+              <input
+                type="text"
+                name="whatsapp_phone_id"
+                className="form-input"
+                value={formData.whatsapp_phone_id}
+                onChange={handleChange}
+                required
+                dir="ltr"
+                placeholder="أدخل معرف الرقم (Phone Number ID)"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">اسم قالب واتساب (Template Name)</label>
+              <input
+                type="text"
+                name="whatsapp_template_name"
+                className="form-input"
+                value={formData.whatsapp_template_name}
+                onChange={handleChange}
+                required
+                dir="ltr"
+                placeholder="مثال: hello_world"
+              />
+            </div>
+          </div>
 
-        <div className="form-row mb-4">
           <div className="form-group">
-            <label className="form-label">WhatsApp Access Token</label>
+            <label className="form-label">رمز الوصول لواتساب (WhatsApp Access Token)</label>
             <input
               type="password"
               name="whatsapp_access_token"
@@ -147,48 +206,6 @@ export default function Settings() {
               required
               dir="ltr"
               placeholder="EAA..."
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">اسم قالب واتساب (Template Name)</label>
-            <input
-              type="text"
-              name="whatsapp_template_name"
-              className="form-input"
-              value={formData.whatsapp_template_name}
-              onChange={handleChange}
-              required
-              dir="ltr"
-              placeholder="مثال: hello_world"
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">تأخير الإرسال (بالساعات)</label>
-            <input
-              type="number"
-              name="reminder_delay_hours"
-              className="form-input"
-              value={formData.reminder_delay_hours}
-              onChange={handleChange}
-              min="1"
-              max="72"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">عدد محاولات إعادة الإرسال</label>
-            <input
-              type="number"
-              name="max_retries"
-              className="form-input"
-              value={formData.max_retries}
-              onChange={handleChange}
-              min="0"
-              max="5"
-              required
             />
           </div>
         </div>

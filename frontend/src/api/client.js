@@ -38,6 +38,7 @@ export const authApi = {
   login: (data) => apiClient.post('/auth/login', data),
   register: (data) => apiClient.post('/auth/register', data),
   me: () => apiClient.get('/auth/me'),
+  users: () => apiClient.get('/auth/users'),
 }
 
 // ── Dashboard ─────────────────────────────────────────────

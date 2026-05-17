@@ -89,6 +89,7 @@ input, select, textarea { font-family:var(--font); }
   flex-shrink:0;
   z-index:100;
   transition:transform var(--transition);
+  overflow-y: auto;
 }
 .sidebar-logo {
   display:flex;

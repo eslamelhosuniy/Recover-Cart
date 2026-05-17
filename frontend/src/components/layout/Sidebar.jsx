@@ -6,6 +6,7 @@ const navItems = [
   { to: '/carts',     icon: 'fa-cart-shopping',    label: 'السلات المهجورة' },
   { to: '/messages',  icon: 'fa-comment-dots',     label: 'رسائل واتساب' },
   { to: '/customers', icon: 'fa-users',            label: 'العملاء' },
+  { to: '/registered-customers', icon: 'fa-user-shield', label: 'العملاء المسجلون لدينا', adminOnly: true },
   { to: '/settings',  icon: 'fa-gear',             label: 'الإعدادات' },
 ]
 
@@ -39,12 +40,14 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Navigation */}
         <nav className="sidebar-nav">
-          {navItems.map(({ to, icon, label }) => (
-            <NavLink key={to} to={to} onClick={onClose}>
-              <i className={`fa-solid ${icon} nav-icon`} />
-              {label}
-            </NavLink>
-          ))}
+          {navItems
+            .filter(({ adminOnly }) => !adminOnly || (user && user.is_admin))
+            .map(({ to, icon, label }) => (
+              <NavLink key={to} to={to} onClick={onClose}>
+                <i className={`fa-solid ${icon} nav-icon`} />
+                {label}
+              </NavLink>
+            ))}
         </nav>
 
         {/* User info + logout */}
