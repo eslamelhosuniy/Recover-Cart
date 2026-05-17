@@ -14,7 +14,7 @@ class CartService:
         self.cart_repo = CartRepository()
         self.customer_repo = CustomerRepository()
 
-    async def process_abandoned_cart(self, db: AsyncSession, payload: dict) -> None:
+    async def process_abandoned_cart(self, db: AsyncSession, payload: dict, user_id: str) -> None:
         try:
             event_type = payload.get("event")
             # if event_type != settings.event_name:
@@ -25,7 +25,7 @@ class CartService:
             
             salla_customer_id = str(customer_data.get("id"))
             
-            customer = await self.customer_repo.get_by_salla_id(db, salla_customer_id)
+            customer = await self.customer_repo.get_by_salla_id(db, salla_customer_id, user_id)
             if not customer:
                 cust_in = CustomerCreate(
                     salla_customer_id=salla_customer_id,
@@ -34,12 +34,14 @@ class CartService:
                     mobile_code=customer_data.get("mobile_code", ""),
                     email=customer_data.get("email")
                 )
-                customer = await self.customer_repo.create(db, cust_in.model_dump())
+                cust_data = cust_in.model_dump()
+                cust_data["user_id"] = user_id
+                customer = await self.customer_repo.create(db, cust_data)
             else:
                 await self.customer_repo.update(db, customer, {"total_carts": customer.total_carts + 1})
 
             salla_cart_id = str(data.get("id"))
-            cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id)
+            cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id, user_id)
             
             if not cart:
                 cart_value = 0.0
@@ -68,7 +70,9 @@ class CartService:
                     abandoned_at=datetime.now(timezone.utc),
                     checkout_url=data.get("checkout_url")
                 )
-                await self.cart_repo.create(db, cart_in.model_dump())
+                cart_data = cart_in.model_dump()
+                cart_data["user_id"] = user_id
+                await self.cart_repo.create(db, cart_data)
                 logger.info(f"Successfully processed abandoned cart: {salla_cart_id}")
             else:
                 logger.info(f"Cart {salla_cart_id} already exists. Ignoring.")

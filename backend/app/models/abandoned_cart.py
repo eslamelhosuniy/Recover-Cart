@@ -5,11 +5,15 @@ import uuid
 from datetime import datetime, timezone
 from app.core.database import Base
 
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric, UniqueConstraint
+
 class AbandonedCart(Base):
     __tablename__ = "abandoned_carts"
+    __table_args__ = (UniqueConstraint('salla_cart_id', 'user_id', name='uq_cart_user'),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    salla_cart_id = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    salla_cart_id = Column(String, index=True, nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     cart_value = Column(Numeric(10, 2), nullable=False)
     checkout_url = Column(String, nullable=True)

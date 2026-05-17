@@ -9,8 +9,12 @@ class CartRepository(BaseRepository[AbandonedCart]):
     def __init__(self):
         super().__init__(AbandonedCart)
 
-    async def get_by_salla_id(self, db: AsyncSession, salla_cart_id: str) -> Optional[AbandonedCart]:
-        result = await db.execute(select(self.model).where(self.model.salla_cart_id == salla_cart_id))
+    async def get_by_salla_id(self, db: AsyncSession, salla_cart_id: str, user_id: str) -> Optional[AbandonedCart]:
+        result = await db.execute(
+            select(self.model)
+            .where(self.model.salla_cart_id == salla_cart_id)
+            .where(self.model.user_id == user_id)
+        )
         return result.scalars().first()
 
     async def get_all(self, db: AsyncSession, skip: int = 0, limit: int = 10) -> List[AbandonedCart]:

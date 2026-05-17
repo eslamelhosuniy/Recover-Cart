@@ -5,11 +5,15 @@ import uuid
 from datetime import datetime, timezone
 from app.core.database import Base
 
+from sqlalchemy import Column, String, Integer, DateTime, UniqueConstraint
+
 class Customer(Base):
     __tablename__ = "customers"
+    __table_args__ = (UniqueConstraint('salla_customer_id', 'user_id', name='uq_customer_user'),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    salla_customer_id = Column(String, unique=True, index=True, nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    salla_customer_id = Column(String, index=True, nullable=False)
     full_name = Column(String, nullable=False)
     mobile = Column(String, nullable=False)
     mobile_code = Column(String, nullable=False)
