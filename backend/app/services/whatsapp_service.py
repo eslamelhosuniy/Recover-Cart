@@ -1,5 +1,4 @@
 import httpx
-from app.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,10 +6,18 @@ logger = logging.getLogger(__name__)
 class WhatsAppService:
     BASE_URL = "https://graph.facebook.com/v25.0"
 
-    async def send_template_message(self, to_phone: str, template_name: str, language_code: str = "ar", components: list = None) -> dict:
-        url = f"{self.BASE_URL}/{settings.whatsapp_phone_number_id}/messages"
+    async def send_template_message(
+        self,
+        to_phone: str,
+        template_name: str,
+        whatsapp_phone_id: str,
+        whatsapp_token: str,
+        language_code: str = "ar",
+        components: list = None
+    ) -> dict:
+        url = f"{self.BASE_URL}/{whatsapp_phone_id}/messages"
         headers = {
-            "Authorization": f"Bearer {settings.whatsapp_token}",
+            "Authorization": f"Bearer {whatsapp_token}",
             "Content-Type": "application/json"
         }
         

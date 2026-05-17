@@ -3,7 +3,6 @@ from app.repositories.cart_repository import CartRepository
 from app.repositories.customer_repository import CustomerRepository
 from app.schemas.cart_schema import CartCreate
 from app.schemas.customer_schema import CustomerCreate
-from app.config import settings
 import logging
 from datetime import datetime, timezone
 
@@ -17,8 +16,6 @@ class CartService:
     async def process_abandoned_cart(self, db: AsyncSession, payload: dict, user_id: str) -> None:
         try:
             event_type = payload.get("event")
-            # if event_type != settings.event_name:
-            #     return
 
             data = payload.get("data", {})
             customer_data = data.get("customer", {})

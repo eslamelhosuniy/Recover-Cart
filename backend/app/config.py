@@ -4,15 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str
     redis_url: str
-    salla_webhook_secret: str
-    whatsapp_token: str
-    whatsapp_phone_number_id: str
-    whatsapp_template_name: str = "abandoned_cart_reminder"
-    coupon_code: str = ""
     event_name: str = Field(default="abandoned.cart.updated", alias="SALLA_EVENT_NAME")
     app_env: str = "development"
     app_secret_key: str
-    reminder_delay_hours: int = 1
 
     def set_event_name(self, name: str):
         """Setter to change event_name at runtime"""
