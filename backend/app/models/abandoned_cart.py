@@ -1,11 +1,9 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime, timezone
 from app.core.database import Base
-
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Numeric, UniqueConstraint
 
 class AbandonedCart(Base):
     __tablename__ = "abandoned_carts"

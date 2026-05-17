@@ -68,3 +68,18 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/users", response_model=list[UserResponse])
+async def list_users(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only administrators can view registered users."
+        )
+    result = await db.execute(select(User).order_by(User.created_at.desc()))
+    return result.scalars().all()
+

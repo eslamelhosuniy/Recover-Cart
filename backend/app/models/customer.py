@@ -1,15 +1,12 @@
-from sqlalchemy import Column, String, Integer, DateTime
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime, timezone
 from app.core.database import Base
 
-from sqlalchemy import Column, String, Integer, DateTime, UniqueConstraint
-
 class Customer(Base):
     __tablename__ = "customers"
-    __table_args__ = (UniqueConstraint('salla_customer_id', 'user_id', name='uq_customer_user'),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
