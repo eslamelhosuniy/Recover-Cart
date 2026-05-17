@@ -43,6 +43,7 @@ export const authApi = {
 // ── Dashboard ─────────────────────────────────────────────
 export const dashboardApi = {
   kpis: () => apiClient.get('/dashboard/kpis'),
+  nextJob: () => apiClient.get('/dashboard/next-job'),
 }
 
 // ── Carts ─────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export const messagesApi = {
 export const customersApi = {
   list: (skip = 0, limit = 10) => apiClient.get(`/customers?skip=${skip}&limit=${limit}`),
   get: (id) => apiClient.get(`/customers/${id}`),
+  getCarts: (id) => apiClient.get(`/customers/${id}/carts`),
 }
 
 // ── Settings ──────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 
@@ -13,7 +14,8 @@ import Settings from './pages/Settings'
 
 export default function App() {
   return (
-    <AuthProvider>
+    <NotificationProvider>
+      <AuthProvider>
       <Router>
         <Routes>
           <Route path="/signin" element={<SignIn />} />
@@ -39,6 +41,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </NotificationProvider>
   )
 }
