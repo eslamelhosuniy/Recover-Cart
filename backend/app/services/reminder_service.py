@@ -86,14 +86,31 @@ class ReminderService:
                 await self.cart_repo.update(db, cart, {"reminder_sent": True})
             raise ValueError("تم إرسال رسالة لهذا العميل خلال آخر 24 ساعة. لا يمكن الإرسال مجدداً.")
 
-        full_phone = f"{customer.mobile_code}{customer.mobile}"
+        full_phone = f"{customer.mobile}"
         
         try:
             customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
             checkout_url = cart.checkout_url or "https://reiash.com/cart"
             coupon = store_settings.coupon_code or "رياشن للمفروشات"
 
+            # Extract only the path/suffix of the URL using split('/')
+            if "://" in checkout_url:
+                checkout_button_param = "/".join(checkout_url.split('/')[3:])
+            else:
+                checkout_button_param = checkout_url
+
             components = [
+                {
+                    "type": "header",
+                    "parameters": [
+                        {
+                            "type": "image",
+                            "image": {
+                                "link": "https://c.top4top.io/p_3790bqs1o1.jpg"
+                            }
+                        }
+                    ]
+                },
                 {
                     "type": "body",
                     "parameters": [
@@ -103,7 +120,7 @@ class ReminderService:
                             "text": customer_name
                         },
                         {
-                            "parameter_name": "code",
+                            "parameter_name": "cupon",
                             "type": "text",
                             "text": coupon
                         }
@@ -116,7 +133,7 @@ class ReminderService:
                     "parameters": [
                         {
                             "type": "text",
-                            "text": checkout_url
+                            "text": checkout_button_param
                         }
                     ]
                 }
