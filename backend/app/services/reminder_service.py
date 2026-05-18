@@ -95,20 +95,15 @@ class ReminderService:
 
             components = [
                 {
-                    "type": "header",
+                    "type": "body",
                     "parameters": [
                         {
                             "parameter_name": "name",
                             "type": "text",
                             "text": customer_name
-                        }
-                    ]
-                },
-                {
-                    "type": "body",
-                    "parameters": [
+                        },
                         {
-                            "parameter_name": "cupon",
+                            "parameter_name": "code",
                             "type": "text",
                             "text": coupon
                         }
