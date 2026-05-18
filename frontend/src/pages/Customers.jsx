@@ -79,7 +79,7 @@ export default function Customers() {
           </div>
           
           <div style={{ textAlign: 'left', direction: 'ltr' }}>
-            <div className="text-muted text-small">الجوال: {selectedCustomer.mobile_code} {selectedCustomer.mobile}</div>
+            <div className="text-muted text-small">الجوال: {selectedCustomer.mobile}</div>
             <div className="text-muted text-small">البريد: {selectedCustomer.email || '-'}</div>
           </div>
         </div>
@@ -178,7 +178,7 @@ export default function Customers() {
                       </button>
                     </td>
                     <td dir="ltr" className="text-right">
-                      {cust.mobile_code} {cust.mobile}
+                      {cust.mobile}
                     </td>
                     <td className="text-muted">{cust.email || '-'}</td>
                     <td>

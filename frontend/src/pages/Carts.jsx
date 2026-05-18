@@ -114,7 +114,7 @@ export default function Carts() {
                         )}
                       </td>
                       <td dir="ltr" className="text-right">
-                        {cart.customer ? `${cart.customer.mobile_code}${cart.customer.mobile}` : '-'}
+                        {cart.customer ? `${cart.customer.mobile}` : '-'}
                       </td>
                       <td className="fw-bold text-gold">{cart.cart_value} {cart.currency || 'ر.س'}</td>
                       <td dir="ltr" className="text-right">{new Date(cart.abandoned_at).toLocaleString('ar-SA')}</td>
