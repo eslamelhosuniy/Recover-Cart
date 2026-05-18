@@ -14,7 +14,7 @@ export default function Settings() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [isNew, setIsNew] = useState(false)
+  const [isNew, setIsNew] = useState(true)
   const [message, setMessage] = useState({ type: '', text: '' })
   const { showNotification } = useNotification()
 
