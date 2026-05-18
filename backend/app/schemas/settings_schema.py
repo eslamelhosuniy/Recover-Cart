@@ -11,7 +11,7 @@ class SettingsBase(BaseModel):
     coupon_code: Optional[str] = None
 
 class SettingsCreate(SettingsBase):
-    salla_webhook_secret: str
+    salla_webhook_secret: Optional[str] = None
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str
@@ -23,7 +23,7 @@ class SettingsUpdate(SettingsBase):
 class SettingsResponse(SettingsBase):
     id: UUID
     user_id: UUID
-    salla_webhook_secret: str
+    salla_webhook_secret: Optional[str] = None
     whatsapp_phone_id: str
     whatsapp_access_token: str
     whatsapp_template_name: str

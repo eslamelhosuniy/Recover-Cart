@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { settingsApi } from '../api/client'
 import Spinner from '../components/ui/Spinner'
+import { useNotification } from '../contexts/NotificationContext'
 
 export default function Settings() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [isNew, setIsNew] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+  const { showNotification } = useNotification()
 
   useEffect(() => {
     settingsApi.get()
@@ -23,7 +25,7 @@ export default function Settings() {
         setIsNew(false)
       })
       .catch((err) => {
-        if (err.response?.status === 404) {
+        if (err.response?.status == 404) {
           setIsNew(true)
         }
       })
@@ -41,8 +43,6 @@ export default function Settings() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
-    setMessage({ type: '', text: '' })
-
     try {
       if (isNew) {
         await settingsApi.create(formData)
@@ -50,10 +50,9 @@ export default function Settings() {
       } else {
         await settingsApi.update(formData)
       }
-      setMessage({ type: 'success', text: 'تم حفظ الإعدادات بنجاح.' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      showNotification("تم حفظ الإعدادات بنجاح",'success') 
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.detail || 'حدث خطأ أثناء الحفظ.' })
+      showNotification(err.response?.data?.detail || 'حدث خطأ أثناء الحفظ.','error') 
     } finally {
       setSaving(false)
     }
@@ -109,7 +108,6 @@ export default function Settings() {
                 className="form-input"
                 value={formData.salla_webhook_secret || ''}
                 onChange={handleChange}
-                required
                 dir="ltr"
                 placeholder="أدخل الـ Token السري الخاص بـ Salla"
               />

@@ -20,7 +20,6 @@ cart_service = CartService()
 async def salla_webhook(
     request: Request,
     user_id: UUID,
-    x_salla_signature: str = Header(None),
     db: AsyncSession = Depends(get_db)
 ):
     # 1. Verify user exists
@@ -35,27 +34,13 @@ async def salla_webhook(
     if not settings:
         raise HTTPException(status_code=404, detail="Store settings not configured for this user")
         
-    # 3. Validate Webhook Signature
     body = await request.body()
-    if not x_salla_signature:
-        logger.warning("Missing x-salla-signature header")
-        raise HTTPException(status_code=401, detail="Missing signature")
-        
-    secret = settings.salla_webhook_secret.encode("utf-8")
-    computed_signature = hmac.new(secret, body, hashlib.sha256).hexdigest()
-    
-    # Use constant-time comparison to prevent timing attacks
-    if not hmac.compare_digest(computed_signature, x_salla_signature):
-        logger.warning(f"Invalid Salla signature for user {user_id}")
-        raise HTTPException(status_code=401, detail="Invalid signature")
 
-    # 4. Parse payload and process
     try:
         payload = json.loads(body.decode("utf-8"))
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
         
-    # Validate the event name dynamically
     event_name = payload.get("event")
     from app.config import settings
     if not event_name or event_name not in settings.accepted_events or settings.accepted_events[event_name] != "recover_salla":
