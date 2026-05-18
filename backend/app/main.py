@@ -56,6 +56,10 @@ def create_app() -> FastAPI:
         # Don't expose environment info publicly
         return {"status": "ok"}
 
+    from app.core.spa import setup_spa
+    setup_spa(app)
+
     return app
+
 
 app = create_app()

@@ -22,3 +22,10 @@ Thumbs.db
 # Config files
 backend/alembic.ini
 alembic.ini
+backend/alembic/versions/
+
+# Scratch & Dump files
+scratch_test.py
+backend/scratch_test.py
+*.sql
+
