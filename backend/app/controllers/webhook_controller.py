@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Header, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from uuid import UUID
@@ -19,7 +19,7 @@ cart_service = CartService()
 @router.post("/salla")
 async def salla_webhook(
     request: Request,
-    user_id: UUID,
+    user_id: UUID = Query(...),
     db: AsyncSession = Depends(get_db)
 ):
     # 1. Verify user exists
