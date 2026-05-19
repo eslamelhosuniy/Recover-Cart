@@ -24,3 +24,4 @@ class AbandonedCart(Base):
 
     customer = relationship("Customer", back_populates="carts")
     messages = relationship("MessageLog", back_populates="cart", cascade="all, delete-orphan")
+    recovered_details = relationship("RecoveredCart", backref="cart", uselist=False, cascade="all, delete-orphan")

@@ -64,7 +64,7 @@ export default function Customers() {
       <div className="card animate-in">
         <div className="card-header d-flex justify-between align-center" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
           <div>
-            <button 
+            <button
               onClick={() => setSelectedCustomer(null)}
               className="btn btn-secondary text-small d-flex align-center gap-1 mb-2"
               style={{ padding: '.4rem .8rem', display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}
@@ -77,7 +77,7 @@ export default function Customers() {
               سلات العميل: {selectedCustomer.full_name}
             </h2>
           </div>
-          
+
           <div style={{ textAlign: 'left', direction: 'ltr' }}>
             <div className="text-muted text-small">الجوال: {selectedCustomer.mobile}</div>
             <div className="text-muted text-small">البريد: {selectedCustomer.email || '-'}</div>
@@ -105,9 +105,9 @@ export default function Customers() {
                     <tr key={cart.id}>
                       <td className="fw-bold">
                         {cart.checkout_url ? (
-                          <a 
-                            href={cart.checkout_url} 
-                            target="_blank" 
+                          <a
+                            href={cart.checkout_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}
                             title="الذهاب لصفحة إتمام الشراء"
@@ -125,7 +125,7 @@ export default function Customers() {
                       </td>
                       <td>
                         {cart.is_recovered ? (
-                          <span className="badge badge-success">مسترجعة</span>
+                          <span className="badge badge-success">تم شرائها</span>
                         ) : cart.reminder_sent ? (
                           <span className="badge badge-warning">تم التذكير</span>
                         ) : (
@@ -169,7 +169,7 @@ export default function Customers() {
                 {data.map((cust) => (
                   <tr key={cust.id}>
                     <td className="fw-bold">
-                      <button 
+                      <button
                         onClick={() => setSelectedCustomer(cust)}
                         className="btn btn-link p-0 text-start"
                         style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--accent)', textDecoration: 'underline' }}

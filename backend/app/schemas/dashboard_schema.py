@@ -4,6 +4,7 @@ from typing import List
 class DashboardKPIs(BaseModel):
     total_carts: int
     recovered_carts: int
+    left_carts: int
     recovery_rate: float
     total_revenue_recovered: float
 

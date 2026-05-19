@@ -497,3 +497,98 @@ td { font-size:.9rem; }
   .card { padding:1.25rem; }
   .auth-card { padding:1.75rem; }
 }
+
+/* ── Sidebar Dropdown & Admin Section ── */
+.sidebar-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.1rem;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: .95rem;
+  transition: all var(--transition);
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: right;
+}
+.sidebar-dropdown-toggle:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.sidebar-dropdown-toggle.active {
+  color: var(--text);
+}
+.sidebar-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  margin-top: .25rem;
+  padding-right: 1.25rem;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  margin-right: 1rem;
+  animation: fadeIn 0.25s ease-out;
+}
+.sidebar-dropdown-menu a {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  padding: .65rem .85rem;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: .88rem;
+  transition: all var(--transition);
+}
+.sidebar-dropdown-menu a:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+.sidebar-dropdown-menu a.active {
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.sidebar-section-title {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin: 1.5rem 1.1rem .5rem 0;
+  opacity: 0.6;
+}
+
+.sidebar-footer .footer-nav-item {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .85rem 1.1rem;
+  color: var(--text-muted);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: .95rem;
+  transition: all var(--transition);
+  margin-bottom: .25rem;
+  position: relative;
+}
+.sidebar-footer .footer-nav-item:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.sidebar-footer .footer-nav-item.active {
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.sidebar-footer .footer-nav-item.active::before {
+  content: '';
+  position: absolute;
+  right: 0; top: 20%; bottom: 20%;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 3px 0 0 3px;
+}

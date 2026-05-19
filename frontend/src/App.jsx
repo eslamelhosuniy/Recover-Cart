@@ -7,6 +7,7 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import SignIn from './pages/SignIn'
 import Dashboard from './pages/Dashboard'
 import Carts from './pages/Carts'
+import RecoveredCarts from './pages/RecoveredCarts'
 import Messages from './pages/Messages'
 import Customers from './pages/Customers'
 import RegisteredCustomers from './pages/RegisteredCustomers'
@@ -31,6 +32,7 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="carts" element={<Carts />} />
+            <Route path="carts/recovered" element={<RecoveredCarts />} />
             <Route path="messages" element={<Messages />} />
             <Route path="customers" element={<Customers />} />
             <Route path="registered-customers" element={<RegisteredCustomers />} />

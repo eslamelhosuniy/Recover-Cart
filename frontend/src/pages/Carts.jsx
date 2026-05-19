@@ -85,9 +85,9 @@ export default function Carts() {
                     <tr key={cart.id}>
                       <td className="fw-bold">
                         {cart.checkout_url ? (
-                          <a 
-                            href={cart.checkout_url} 
-                            target="_blank" 
+                          <a
+                            href={cart.checkout_url}
+                            target="_blank"
                             rel="noopener noreferrer"
                             style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}
                             title="الذهاب لصفحة إتمام الشراء"
@@ -121,7 +121,7 @@ export default function Carts() {
                       <td>
                         <div className="d-flex align-center gap-2">
                           {cart.is_recovered ? (
-                            <Badge variant="success">مسترجعة</Badge>
+                            <Badge variant="success">تم شرائها</Badge>
                           ) : (
                             <Badge variant="muted">مهجورة</Badge>
                           )}
@@ -142,7 +142,7 @@ export default function Carts() {
                           {actionLoading === cart.id ? (
                             <i className="fa-solid fa-spinner fa-spin" />
                           ) : (
-                            <i className="fa-brands fa-whatsapp text-success" />
+                            <i className={`fa-brands fa-whatsapp ${cart.is_recovered || cart.reminder_sent ? 'text-muted' : 'text-success'}`} />
                           )}
                           <span className="hide-mobile" style={{ marginRight: '.3rem' }}>تذكير</span>
                         </button>

@@ -99,7 +99,7 @@ export default function Dashboard() {
 
       {/* Automated Job Timer Banner */}
       {nextRun && (
-        <div 
+        <div
           className="mb-3 d-flex justify-between align-center p-2 px-3 fade-in"
           style={{
             background: 'linear-gradient(135deg, var(--bg-card, #1e1e2e) 0%, rgba(20, 20, 35, 0.95) 100%)',
@@ -109,7 +109,7 @@ export default function Dashboard() {
           }}
         >
           <div className="d-flex align-center gap-2">
-            <div 
+            <div
               style={{
                 width: '32px',
                 height: '32px',
@@ -126,7 +126,7 @@ export default function Dashboard() {
             <div>
               <div style={{ fontWeight: '700', fontSize: '.85rem', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                 مساعد استرجاع السلات الذكي
-                <span 
+                <span
                   style={{
                     width: '6px',
                     height: '6px',
@@ -143,7 +143,7 @@ export default function Dashboard() {
 
           <div className="d-flex align-center gap-2">
             <span style={{ fontSize: '.75rem', fontWeight: '700', color: '#a0a0b8' }}>التشغيل القادم:</span>
-            <div 
+            <div
               style={{
                 fontFamily: 'monospace',
                 fontSize: '1rem',
@@ -189,6 +189,13 @@ export default function Dashboard() {
             sub="من إجمالي السلات"
           />
           <KPICard
+            label="السلات المتبقية"
+            value={kpis.left_carts}
+            icon="fa-cart-arrow-down"
+            iconColor="#ef4444"
+            sub="لم يتم شرائها بعد"
+          />
+          <KPICard
             label="الأرباح المسترجعة"
             value={`${kpis.total_revenue_recovered} ر.س`}
             icon="fa-sack-dollar"
@@ -229,9 +236,9 @@ export default function Dashboard() {
                   <tr key={cart.id}>
                     <td className="fw-bold">
                       {cart.checkout_url ? (
-                        <a 
-                          href={cart.checkout_url} 
-                          target="_blank" 
+                        <a
+                          href={cart.checkout_url}
+                          target="_blank"
                           rel="noopener noreferrer"
                           style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           title="الذهاب لصفحة إتمام الشراء"
@@ -268,7 +275,7 @@ export default function Dashboard() {
                     </td>
                     <td>
                       {cart.is_recovered ? (
-                        <Badge variant="success">مسترجعة</Badge>
+                        <Badge variant="success">تم شرائها</Badge>
                       ) : (
                         <Badge variant="muted">مهجورة</Badge>
                       )}

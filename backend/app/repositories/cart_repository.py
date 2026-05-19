@@ -17,11 +17,18 @@ class CartRepository(BaseRepository[AbandonedCart]):
         )
         return result.scalars().first()
 
-    async def get_all(self, db: AsyncSession, user_id: any, skip: int = 0, limit: int = 10) -> List[AbandonedCart]:
+    async def get_all(self, db: AsyncSession, user_id: any, skip: int = 0, limit: int = 10, status: Optional[str] = None) -> List[AbandonedCart]:
+        query = select(self.model).where(self.model.user_id == user_id)
+        
+        if status == "recovered":
+            query = query.where(self.model.is_recovered == True)
+        elif status == "abandoned":
+            query = query.where(self.model.is_recovered == False)
+
         result = await db.execute(
-            select(self.model)
-            .where(self.model.user_id == user_id)
-            .options(selectinload(self.model.customer))
+            query.options(selectinload(self.model.customer))
+            .options(selectinload(self.model.recovered_details))
+            .options(selectinload(self.model.messages))
             .order_by(self.model.created_at.desc())
             .offset(skip)
             .limit(limit)
@@ -33,5 +40,7 @@ class CartRepository(BaseRepository[AbandonedCart]):
             select(self.model)
             .where(self.model.id == id)
             .options(selectinload(self.model.customer))
+            .options(selectinload(self.model.recovered_details))
+            .options(selectinload(self.model.messages))
         )
         return result.scalars().first()

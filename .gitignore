@@ -11,6 +11,8 @@ env.bak/
 venv.bak/
 node_modules/
 recover/
+
+backend/frontend_dist/
 # IDEs
 .vscode/
 .idea/

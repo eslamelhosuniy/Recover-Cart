@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 from app.schemas.customer_schema import CustomerResponse
+from app.schemas.message_schema import MessageResponse
+from app.schemas.recovered_cart_schema import RecoveredCartResponse
 
 class CartBase(BaseModel):
     salla_cart_id: str
@@ -23,5 +25,7 @@ class CartResponse(CartBase):
     recovered_at: Optional[datetime]
     created_at: datetime
     customer: Optional[CustomerResponse] = None
+    messages: Optional[List[MessageResponse]] = []
+    recovered_details: Optional[RecoveredCartResponse] = None
 
     model_config = {"from_attributes": True}

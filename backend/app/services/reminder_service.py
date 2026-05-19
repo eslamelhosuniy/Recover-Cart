@@ -54,6 +54,9 @@ class ReminderService:
                     logger.warning(f"Skipping cart {cart.id} in batch: {str(e)}")
 
     async def send_reminder_for_cart(self, db: AsyncSession, cart: AbandonedCart, store_settings: StoreSettings = None) -> None:
+        if cart.is_recovered:
+            raise ValueError("هذه السلة مسترجعة بالفعل (تم شراؤها)، ولا يمكن إرسال رسالة تذكيرية لها.")
+
         if not store_settings:
             store_settings = await self.settings_repo.get_current_settings(db, str(cart.user_id))
             

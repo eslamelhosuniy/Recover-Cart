@@ -1,20 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import usePagination from '../hooks/usePagination'
-import { messagesApi } from '../api/client'
+import { messagesApi, cartsApi } from '../api/client'
 import Pagination from '../components/ui/Pagination'
 import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorModal from '../components/ui/ErrorModal'
 
 const STATUS_MAP = {
-  pending:   { label: 'في الانتظار', icon: 'fa-clock', color: 'warning' },
-  accepted:  { label: 'مقبولة', icon: 'fa-check', color: 'info' },
-  sent:      { label: 'تم الإرسال', icon: 'fa-check-double', color: 'muted' },
-  read:      { label: 'مقروءة', icon: 'fa-check-double', color: 'info' },
-  failed:    { label: 'فشلت', icon: 'fa-xmark', color: 'danger' },
+  pending: { label: 'في الانتظار', icon: 'fa-clock', color: 'warning' },
+  accepted: { label: 'مقبولة', icon: 'fa-check', color: 'info' },
+  sent: { label: 'تم الإرسال', icon: 'fa-check-double', color: 'muted' },
+  read: { label: 'مقروءة', icon: 'fa-check-double', color: 'info' },
+  failed: { label: 'فشلت', icon: 'fa-xmark', color: 'danger' },
 }
 
 export default function Messages() {
+  const navigate = useNavigate()
   const { page, limit, skip, handlePageChange } = usePagination(10)
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
@@ -25,7 +27,26 @@ export default function Messages() {
     setLoading(true)
     try {
       const res = await messagesApi.list(skip, limit)
-      setData(res.data.data)
+      const messagesData = res.data.data
+
+      // Fetch cart details for these messages
+      const cartIds = [...new Set(messagesData.map(m => m.cart_id))]
+      const cartPromises = cartIds.map(id => cartsApi.get(id).catch(() => null))
+      const cartsResponses = await Promise.all(cartPromises)
+
+      const cartsMap = {}
+      cartsResponses.forEach(cRes => {
+        if (cRes && cRes.data) {
+          cartsMap[cRes.data.id] = cRes.data
+        }
+      })
+
+      const enrichedMessages = messagesData.map(msg => ({
+        ...msg,
+        cart: cartsMap[msg.cart_id] || null
+      }))
+
+      setData(enrichedMessages)
       setTotal(res.data.total)
     } catch (err) {
       console.error(err)
@@ -58,8 +79,9 @@ export default function Messages() {
               <table>
                 <thead>
                   <tr>
-                    <th>رقم الرسالة</th>
+                    <th>رقم الواتساب</th>
                     <th>رقم السلة المرتبطة</th>
+                    <th>العميل</th>
                     <th>حالة واتساب</th>
                     <th>وقت الإرسال</th>
                     <th>وقت التحديث</th>
@@ -70,10 +92,43 @@ export default function Messages() {
                     const s = STATUS_MAP[msg.status] || STATUS_MAP.pending
                     return (
                       <tr key={msg.id}>
-                        <td className="fw-bold text-muted">
-                          {msg.whatsapp_msg_id ? msg.whatsapp_msg_id.substring(0, 15) + '...' : '-'}
+                        <td dir="ltr" className="text-right fw-bold text-muted">
+                          {msg.cart?.customer ? msg.cart.customer.mobile : '-'}
                         </td>
-                        <td className="text-muted">#{msg.cart_id.substring(0, 8)}</td>
+                        <td className="fw-bold">
+                          {msg.cart ? (
+                            msg.cart.checkout_url ? (
+                              <a
+                                href={msg.cart.checkout_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '.25rem' }}
+                                title="الذهاب لصفحة إتمام الشراء"
+                              >
+                                #{msg.cart.salla_cart_id.substring(0, 8)}
+                                <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: '.75rem' }} />
+                              </a>
+                            ) : (
+                              <span className="text-muted">#{msg.cart.salla_cart_id.substring(0, 8)}</span>
+                            )
+                          ) : (
+                            <span className="text-muted">#{msg.cart_id.substring(0, 8)}</span>
+                          )}
+                        </td>
+                        <td>
+                          {msg.cart?.customer ? (
+                            <button
+                              onClick={() => navigate('/customers', { state: { selectedCustomer: msg.cart.customer } })}
+                              className="btn btn-link p-0 text-start"
+                              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--accent)', textDecoration: 'underline' }}
+                              title="عرض سلات هذا العميل"
+                            >
+                              {msg.cart.customer.full_name || 'غير معروف'}
+                            </button>
+                          ) : (
+                            <span className="text-muted">غير معروف</span>
+                          )}
+                        </td>
                         <td>
                           <div className={`wa-status ${msg.status}`}>
                             <i className={`fa-solid ${s.icon} ticks`} />

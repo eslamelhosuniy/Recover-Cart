@@ -23,6 +23,15 @@ class UserResponse(UserBase):
     model_config = {"from_attributes": True}
 
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
+
 class LoginRequest(BaseModel):
     username: str
     password: str

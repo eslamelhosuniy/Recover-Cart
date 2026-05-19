@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -22,14 +23,19 @@ reminder_service = ReminderService()
 async def get_carts(
     skip: int = 0, 
     limit: int = 10, 
+    status: Optional[str] = Query(None, description="Filter by status: 'recovered' or 'abandoned'"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    carts = await cart_repo.get_all(db, user_id=current_user.id, skip=skip, limit=limit)
-    total_result = await db.execute(
-        select(func.count(AbandonedCart.id))
-        .where(AbandonedCart.user_id == current_user.id)
-    )
+    carts = await cart_repo.get_all(db, user_id=current_user.id, skip=skip, limit=limit, status=status)
+    
+    count_query = select(func.count(AbandonedCart.id)).where(AbandonedCart.user_id == current_user.id)
+    if status == "recovered":
+        count_query = count_query.where(AbandonedCart.is_recovered == True)
+    elif status == "abandoned":
+        count_query = count_query.where(AbandonedCart.is_recovered == False)
+        
+    total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
     return PaginatedResponse(
         data=carts,

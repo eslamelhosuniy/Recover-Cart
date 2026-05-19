@@ -38,6 +38,9 @@ export const authApi = {
   register: (data) => apiClient.post('/auth/register', data),
   me: () => apiClient.get('/auth/me'),
   users: () => apiClient.get('/auth/users'),
+  createUser: (data) => apiClient.post('/auth/users', data),
+  updateUser: (id, data) => apiClient.put(`/auth/users/${id}`, data),
+  deleteUser: (id) => apiClient.delete(`/auth/users/${id}`),
 }
 
 // ── Dashboard ─────────────────────────────────────────────
@@ -48,7 +51,11 @@ export const dashboardApi = {
 
 // ── Carts ─────────────────────────────────────────────────
 export const cartsApi = {
-  list: (skip = 0, limit = 10) => apiClient.get(`/carts?skip=${skip}&limit=${limit}`),
+  list: (skip = 0, limit = 10, status = '') => {
+    let url = `/carts?skip=${skip}&limit=${limit}`
+    if (status) url += `&status=${status}`
+    return apiClient.get(url)
+  },
   get: (id) => apiClient.get(`/carts/${id}`),
   remind: (id) => apiClient.post(`/carts/${id}/remind`),
 }

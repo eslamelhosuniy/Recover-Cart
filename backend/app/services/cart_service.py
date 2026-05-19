@@ -5,6 +5,9 @@ from app.schemas.cart_schema import CartCreate
 from app.schemas.customer_schema import CustomerCreate
 import logging
 from datetime import datetime, timezone
+from sqlalchemy.future import select
+from app.models.abandoned_cart import AbandonedCart
+from app.models.recovered_cart import RecoveredCart
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +25,43 @@ class CartService:
             
             salla_customer_id = str(customer_data.get("id"))
             
+            if event_type == "abandoned.cart.purchased":
+                salla_cart_id = str(data.get("id"))
+                cart_res = await db.execute(
+                    select(AbandonedCart)
+                    .where(AbandonedCart.salla_cart_id == salla_cart_id)
+                    .where(AbandonedCart.user_id == user_id)
+                )
+                cart = cart_res.scalars().first()
+                if cart:
+                    if not cart.is_recovered:
+                        cart.is_recovered = True
+                        cart.recovered_at = datetime.now(timezone.utc)
+                        db.add(cart)
+                        
+                        # Create recovered cart details
+                        total_amt = float(data.get("total", 0.0))
+                        subtotal_amt = float(data.get("subtotal", 0.0))
+                        discount_amt = float(data.get("total_discount", 0.0))
+                        
+                        recovered = RecoveredCart(
+                            cart_id=cart.id,
+                            status=data.get("status", "purchased"),
+                            currency=data.get("currency", "SAR"),
+                            total=total_amt,
+                            subtotal=subtotal_amt,
+                            total_discount=discount_amt
+                        )
+                        db.add(recovered)
+                        await db.commit()
+                        logger.info(f"Successfully processed purchased cart: {salla_cart_id}")
+                    else:
+                        logger.info(f"Cart {salla_cart_id} already marked as recovered.")
+                else:
+                    logger.warning(f"Received purchase event for unknown cart {salla_cart_id}.")
+                return
+
+            # For abandoned.cart / abandoned.cart.update
             customer = await self.customer_repo.get_by_salla_id(db, salla_customer_id, user_id)
             if not customer:
                 cust_in = CustomerCreate(

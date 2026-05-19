@@ -74,6 +74,8 @@ async def get_customer_carts(
         select(AbandonedCart)
         .where(AbandonedCart.customer_id == id)
         .options(selectinload(AbandonedCart.customer))
+        .options(selectinload(AbandonedCart.recovered_details))
+        .options(selectinload(AbandonedCart.messages))
         .order_by(AbandonedCart.abandoned_at.desc())
     )
     return result.scalars().all()
