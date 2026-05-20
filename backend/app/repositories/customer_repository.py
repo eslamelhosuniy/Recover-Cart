@@ -6,26 +6,41 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 from typing import Optional, List
 from uuid import UUID
+from datetime import datetime
 
 class CustomerRepository(BaseRepository[Customer]):
     def __init__(self):
         super().__init__(Customer)
 
-    async def get_all(self, db: AsyncSession, user_id: UUID, skip: int = 0, limit: int = 10) -> List[Customer]:
+    async def get_all(
+        self, 
+        db: AsyncSession, 
+        user_id: UUID, 
+        skip: int = 0, 
+        limit: int = 10,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> List[Customer]:
+        query = select(self.model).where(self.model.user_id == user_id)
+        if start_date:
+            query = query.where(self.model.created_at >= start_date)
+        if end_date:
+            query = query.where(self.model.created_at <= end_date)
+
         result = await db.execute(
-            select(self.model)
-            .where(self.model.user_id == user_id)
-            .order_by(self.model.created_at.desc())
+            query.order_by(self.model.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
         customers = list(result.scalars().all())
         
         for customer in customers:
-            cart_count_res = await db.execute(
-                select(func.count(AbandonedCart.id))
-                .where(AbandonedCart.customer_id == customer.id)
-            )
+            cart_q = select(func.count(AbandonedCart.id)).where(AbandonedCart.customer_id == customer.id)
+            if start_date:
+                cart_q = cart_q.where(AbandonedCart.abandoned_at >= start_date)
+            if end_date:
+                cart_q = cart_q.where(AbandonedCart.abandoned_at <= end_date)
+            cart_count_res = await db.execute(cart_q)
             customer.total_carts = cart_count_res.scalar() or 0
             
         return customers

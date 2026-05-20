@@ -5,16 +5,19 @@ import { customersApi } from '../api/client'
 import Pagination from '../components/ui/Pagination'
 import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
+import UnifiedFilter from '../components/ui/UnifiedFilter'
 
 export default function Customers() {
   const location = useLocation()
-  const { page, limit, skip, handlePageChange } = usePagination(10)
+  const { page, limit, skip, handlePageChange, resetPage } = usePagination(10)
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [customerCarts, setCustomerCarts] = useState([])
   const [cartsLoading, setCartsLoading] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   useEffect(() => {
     if (location.state?.selectedCustomer) {
@@ -43,7 +46,7 @@ export default function Customers() {
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await customersApi.list(skip, limit)
+      const res = await customersApi.list(skip, limit, startDate, endDate)
       setData(res.data.data)
       setTotal(res.data.total)
     } catch (err) {
@@ -51,11 +54,15 @@ export default function Customers() {
     } finally {
       setLoading(false)
     }
-  }, [skip, limit])
+  }, [skip, limit, startDate, endDate])
 
   useEffect(() => {
     fetchCustomers()
   }, [fetchCustomers])
+
+  useEffect(() => {
+    resetPage()
+  }, [startDate, endDate, resetPage])
 
   if (loading && data.length === 0) return <Spinner center />
 
@@ -145,9 +152,19 @@ export default function Customers() {
 
   return (
     <div className="card animate-in">
-      <div className="card-header">
-        <h2 className="card-title">قائمة العملاء</h2>
-        <div className="text-muted text-small">إجمالي: {total}</div>
+      <div className="card-header d-flex justify-between align-center" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+        <div>
+          <h2 className="card-title">قائمة العملاء</h2>
+          <div className="text-muted text-small">إجمالي: {total}</div>
+        </div>
+        <UnifiedFilter
+          startDate={startDate}
+          endDate={endDate}
+          onApply={(start, end) => {
+            setStartDate(start)
+            setEndDate(end)
+          }}
+        />
       </div>
 
       {data.length === 0 ? (

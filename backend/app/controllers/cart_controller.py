@@ -14,6 +14,8 @@ from app.models.abandoned_cart import AbandonedCart
 from app.core.security import get_current_user
 from app.models.user import User
 
+from app.utils.date_helpers import parse_date_range
+
 router = APIRouter(prefix="/api/v1/carts", tags=["Carts"])
 cart_repo = CartRepository()
 reminder_service = ReminderService()
@@ -24,10 +26,21 @@ async def get_carts(
     skip: int = 0, 
     limit: int = 10, 
     status: Optional[str] = Query(None, description="Filter by status: 'recovered' or 'abandoned'"),
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    carts = await cart_repo.get_all(db, user_id=current_user.id, skip=skip, limit=limit, status=status)
+    start_dt, end_dt = parse_date_range(start_date, end_date)
+    carts = await cart_repo.get_all(
+        db, 
+        user_id=current_user.id, 
+        skip=skip, 
+        limit=limit, 
+        status=status,
+        start_date=start_dt,
+        end_date=end_dt
+    )
     
     count_query = select(func.count(AbandonedCart.id)).where(AbandonedCart.user_id == current_user.id)
     if status == "recovered":
@@ -35,6 +48,11 @@ async def get_carts(
     elif status == "abandoned":
         count_query = count_query.where(AbandonedCart.is_recovered == False)
         
+    if start_dt:
+        count_query = count_query.where(AbandonedCart.abandoned_at >= start_dt)
+    if end_dt:
+        count_query = count_query.where(AbandonedCart.abandoned_at <= end_dt)
+
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
     return PaginatedResponse(

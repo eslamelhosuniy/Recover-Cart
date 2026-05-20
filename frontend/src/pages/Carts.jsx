@@ -8,21 +8,24 @@ import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
 import Badge from '../components/ui/Badge'
 import ErrorModal from '../components/ui/ErrorModal'
+import UnifiedFilter from '../components/ui/UnifiedFilter'
 
 export default function Carts() {
   const navigate = useNavigate()
   const { showNotification } = useNotification()
-  const { page, limit, skip, handlePageChange } = usePagination(10)
+  const { page, limit, skip, handlePageChange, resetPage } = usePagination(10)
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(null)
   const [errorDetail, setErrorDetail] = useState(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   const fetchCarts = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await cartsApi.list(skip, limit)
+      const res = await cartsApi.list(skip, limit, '', startDate, endDate)
       setData(res.data.data)
       setTotal(res.data.total)
     } catch (err) {
@@ -30,11 +33,15 @@ export default function Carts() {
     } finally {
       setLoading(false)
     }
-  }, [skip, limit])
+  }, [skip, limit, startDate, endDate])
 
   useEffect(() => {
     fetchCarts()
   }, [fetchCarts])
+
+  useEffect(() => {
+    resetPage()
+  }, [startDate, endDate, resetPage])
 
   const handleRemind = async (id) => {
     if (!window.confirm('هل أنت متأكد من إرسال تذكير يدوي لهذه السلة؟')) return
@@ -58,9 +65,19 @@ export default function Carts() {
       <ErrorModal error={errorDetail} onClose={() => setErrorDetail(null)} />
 
       <div className="card animate-in">
-        <div className="card-header">
-          <h2 className="card-title">إدارة السلات المهجورة</h2>
-          <div className="text-muted text-small">إجمالي: {total}</div>
+        <div className="card-header d-flex justify-between align-center" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+          <div>
+            <h2 className="card-title">إدارة السلات المهجورة</h2>
+            <div className="text-muted text-small">إجمالي: {total}</div>
+          </div>
+          <UnifiedFilter
+            startDate={startDate}
+            endDate={endDate}
+            onApply={(start, end) => {
+              setStartDate(start)
+              setEndDate(end)
+            }}
+          />
         </div>
 
         {data.length === 0 ? (

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from typing import Optional, List
+from datetime import datetime
 
 class CartRepository(BaseRepository[AbandonedCart]):
     def __init__(self):
@@ -17,13 +18,27 @@ class CartRepository(BaseRepository[AbandonedCart]):
         )
         return result.scalars().first()
 
-    async def get_all(self, db: AsyncSession, user_id: any, skip: int = 0, limit: int = 10, status: Optional[str] = None) -> List[AbandonedCart]:
+    async def get_all(
+        self, 
+        db: AsyncSession, 
+        user_id: any, 
+        skip: int = 0, 
+        limit: int = 10, 
+        status: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> List[AbandonedCart]:
         query = select(self.model).where(self.model.user_id == user_id)
         
         if status == "recovered":
             query = query.where(self.model.is_recovered == True)
         elif status == "abandoned":
             query = query.where(self.model.is_recovered == False)
+
+        if start_date:
+            query = query.where(self.model.abandoned_at >= start_date)
+        if end_date:
+            query = query.where(self.model.abandoned_at <= end_date)
 
         result = await db.execute(
             query.options(selectinload(self.model.customer))

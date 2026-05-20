@@ -25,6 +25,8 @@ from app.core.dependencies import get_db
 from app.models.message_log import MessageLog
 import logging
 
+from typing import Optional
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/webhooks/whatsapp", tags=["WhatsApp Webhook"])
 
@@ -42,6 +44,7 @@ async def whatsapp_webhook_verify(
     hub_mode: str = Query(None, alias="hub.mode"),
     hub_challenge: str = Query(None, alias="hub.challenge"),
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
+    user_id: Optional[str] = Query(None),
 ):
     """
     Meta webhook verification handshake.
@@ -50,7 +53,7 @@ async def whatsapp_webhook_verify(
     from app.config import settings
     expected_token = settings.app_secret_key  # reuse app secret as verify token
     if hub_mode == "subscribe" and hub_challenge and hub_verify_token == expected_token:
-        logger.info("WhatsApp webhook verified successfully")
+        logger.info(f"WhatsApp webhook verified successfully for user_id={user_id}")
         return int(hub_challenge)
     logger.warning("WhatsApp webhook verification failed — bad token or missing params")
     return {"status": "forbidden"}
@@ -59,6 +62,7 @@ async def whatsapp_webhook_verify(
 @router.post("")
 async def whatsapp_webhook_receive(
     request: Request,
+    user_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Receive and process WhatsApp message status updates from Meta."""

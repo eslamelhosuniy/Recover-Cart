@@ -4,6 +4,7 @@ import KPICard from '../components/ui/KPICard'
 import Badge from '../components/ui/Badge'
 import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
+import UnifiedFilter from '../components/ui/UnifiedFilter'
 import { dashboardApi, cartsApi } from '../api/client'
 
 export default function Dashboard() {
@@ -15,6 +16,8 @@ export default function Dashboard() {
   const [nextRun, setNextRun] = useState(null)
   const [timeLeft, setTimeLeft] = useState('')
   const [timerParts, setTimerParts] = useState({ hours: '00', minutes: '00', seconds: '00' })
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   const fetchNextJob = useCallback(() => {
     dashboardApi.nextJob()
@@ -30,8 +33,8 @@ export default function Dashboard() {
     if (isRefresh) setRefreshing(true)
     try {
       const [kpiRes, cartsRes] = await Promise.all([
-        dashboardApi.kpis(),
-        cartsApi.list(0, 5),
+        dashboardApi.kpis(startDate, endDate),
+        cartsApi.list(0, 5, '', startDate, endDate),
       ])
       setKpis(kpiRes.data)
       setRecentCarts(cartsRes.data.data)
@@ -42,7 +45,7 @@ export default function Dashboard() {
       setLoading(false)
       if (isRefresh) setRefreshing(false)
     }
-  }, [fetchNextJob])
+  }, [fetchNextJob, startDate, endDate])
 
   useEffect(() => {
     fetchData()
@@ -86,15 +89,26 @@ export default function Dashboard() {
     <div className="animate-in">
       {/* Top Action */}
       <div className="d-flex justify-between align-center mb-3">
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>نظرة عامة على الأداء</h2>
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => fetchData(true)}
-          disabled={refreshing}
-        >
-          <i className={`fa-solid fa-rotate-right ${refreshing ? 'fa-spin' : ''}`} />
-          تحديث البيانات
-        </button>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }} className="mb-0">نظرة عامة على الأداء</h2>
+        <div className="d-flex align-center gap-2">
+          <UnifiedFilter
+            startDate={startDate}
+            endDate={endDate}
+            onApply={(start, end) => {
+              setStartDate(start)
+              setEndDate(end)
+            }}
+          />
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            style={{ height: '36px' }}
+          >
+            <i className={`fa-solid fa-rotate-right ${refreshing ? 'fa-spin' : ''}`} />
+            تحديث
+          </button>
+        </div>
       </div>
 
       {/* Automated Job Timer Banner */}
@@ -164,6 +178,8 @@ export default function Dashboard() {
         </div>
       )}
 
+
+
       {/* KPIs */}
       {kpis && (
         <div className="kpi-grid">
@@ -172,7 +188,7 @@ export default function Dashboard() {
             value={kpis.total_carts}
             icon="fa-cart-shopping"
             iconColor="#8b5cf6"
-            sub="آخر 30 يوم"
+            sub="فترة التصفية"
           />
           <KPICard
             label="السلات المسترجعة"
@@ -194,6 +210,20 @@ export default function Dashboard() {
             icon="fa-cart-arrow-down"
             iconColor="#ef4444"
             sub="لم يتم شرائها بعد"
+          />
+          <KPICard
+            label="عملاء استلموا تذكير"
+            value={kpis.received_messages_customers}
+            icon="fa-user-check"
+            iconColor="#06b6d4"
+            sub="استلموا رسالة واتساب"
+          />
+          <KPICard
+            label="عملاء لم يستلموا تذكير"
+            value={kpis.not_received_messages_customers}
+            icon="fa-user-xmark"
+            iconColor="#f43f5e"
+            sub="لم يتم إرسال/توصيل لهم"
           />
           <KPICard
             label="الأرباح المسترجعة"

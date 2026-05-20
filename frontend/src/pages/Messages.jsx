@@ -6,6 +6,7 @@ import Pagination from '../components/ui/Pagination'
 import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorModal from '../components/ui/ErrorModal'
+import UnifiedFilter from '../components/ui/UnifiedFilter'
 
 const STATUS_MAP = {
   pending: { label: 'في الانتظار', icon: 'fa-clock', color: 'warning' },
@@ -17,16 +18,18 @@ const STATUS_MAP = {
 
 export default function Messages() {
   const navigate = useNavigate()
-  const { page, limit, skip, handlePageChange } = usePagination(10)
+  const { page, limit, skip, handlePageChange, resetPage } = usePagination(10)
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedError, setSelectedError] = useState(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await messagesApi.list(skip, limit)
+      const res = await messagesApi.list(skip, limit, startDate, endDate)
       const messagesData = res.data.data
 
       // Fetch cart details for these messages
@@ -53,11 +56,15 @@ export default function Messages() {
     } finally {
       setLoading(false)
     }
-  }, [skip, limit])
+  }, [skip, limit, startDate, endDate])
 
   useEffect(() => {
     fetchMessages()
   }, [fetchMessages])
+
+  useEffect(() => {
+    resetPage()
+  }, [startDate, endDate, resetPage])
 
   if (loading && data.length === 0) return <Spinner center />
 
@@ -66,9 +73,19 @@ export default function Messages() {
       <ErrorModal error={selectedError} onClose={() => setSelectedError(null)} />
 
       <div className="card animate-in">
-        <div className="card-header">
-          <h2 className="card-title">سجل الرسائل</h2>
-          <div className="text-muted text-small">إجمالي: {total}</div>
+        <div className="card-header d-flex justify-between align-center" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+          <div>
+            <h2 className="card-title">سجل الرسائل</h2>
+            <div className="text-muted text-small">إجمالي: {total}</div>
+          </div>
+          <UnifiedFilter
+            startDate={startDate}
+            endDate={endDate}
+            onApply={(start, end) => {
+              setStartDate(start)
+              setEndDate(end)
+            }}
+          />
         </div>
 
         {data.length === 0 ? (

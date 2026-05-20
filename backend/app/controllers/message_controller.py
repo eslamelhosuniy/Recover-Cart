@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
+from typing import Optional
 from app.core.dependencies import get_db
 from app.core.security import get_current_user
 from app.repositories.message_repository import MessageRepository
@@ -10,6 +11,7 @@ from app.schemas.common import PaginatedResponse
 from app.models.message_log import MessageLog
 from app.models.abandoned_cart import AbandonedCart
 from app.models.user import User
+from app.utils.date_helpers import parse_date_range
 
 router = APIRouter(prefix="/api/v1/messages", tags=["Messages"])
 message_repo = MessageRepository()
@@ -21,28 +23,44 @@ MAX_LIMIT = 100
 async def get_messages(
     skip: int = 0,
     limit: int = 10,
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     # Clamp limit to prevent abuse
     limit = min(limit, MAX_LIMIT)
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     # Only return messages belonging to carts owned by the current user
-    result = await db.execute(
+    query = (
         select(MessageLog)
         .join(AbandonedCart, MessageLog.cart_id == AbandonedCart.id)
         .where(AbandonedCart.user_id == current_user.id)
-        .order_by(MessageLog.sent_at.desc())
+    )
+    if start_dt:
+        query = query.where(MessageLog.sent_at >= start_dt)
+    if end_dt:
+        query = query.where(MessageLog.sent_at <= end_dt)
+
+    result = await db.execute(
+        query.order_by(MessageLog.sent_at.desc())
         .offset(skip)
         .limit(limit)
     )
     messages = list(result.scalars().all())
 
-    total_result = await db.execute(
+    count_query = (
         select(func.count(MessageLog.id))
         .join(AbandonedCart, MessageLog.cart_id == AbandonedCart.id)
         .where(AbandonedCart.user_id == current_user.id)
     )
+    if start_dt:
+        count_query = count_query.where(MessageLog.sent_at >= start_dt)
+    if end_dt:
+        count_query = count_query.where(MessageLog.sent_at <= end_dt)
+
+    total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
     return PaginatedResponse(
@@ -55,10 +73,13 @@ async def get_messages(
 
 @router.get("/stats", response_model=MessageStatsResponse)
 async def get_message_stats(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Aggregated message counts by status — scoped to the current user's store."""
+    start_dt, end_dt = parse_date_range(start_date, end_date)
 
     def _count_where(*conditions):
         q = (
@@ -66,6 +87,10 @@ async def get_message_stats(
             .join(AbandonedCart, MessageLog.cart_id == AbandonedCart.id)
             .where(AbandonedCart.user_id == current_user.id)
         )
+        if start_dt:
+            q = q.where(MessageLog.sent_at >= start_dt)
+        if end_dt:
+            q = q.where(MessageLog.sent_at <= end_dt)
         for c in conditions:
             q = q.where(c)
         return q

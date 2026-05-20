@@ -45,15 +45,24 @@ export const authApi = {
 
 // ── Dashboard ─────────────────────────────────────────────
 export const dashboardApi = {
-  kpis: () => apiClient.get('/dashboard/kpis'),
+  kpis: (startDate = '', endDate = '') => {
+    let url = '/dashboard/kpis'
+    const params = []
+    if (startDate) params.push(`start_date=${startDate}`)
+    if (endDate) params.push(`end_date=${endDate}`)
+    if (params.length > 0) url += `?${params.join('&')}`
+    return apiClient.get(url)
+  },
   nextJob: () => apiClient.get('/dashboard/next-job'),
 }
 
 // ── Carts ─────────────────────────────────────────────────
 export const cartsApi = {
-  list: (skip = 0, limit = 10, status = '') => {
+  list: (skip = 0, limit = 10, status = '', startDate = '', endDate = '') => {
     let url = `/carts?skip=${skip}&limit=${limit}`
     if (status) url += `&status=${status}`
+    if (startDate) url += `&start_date=${startDate}`
+    if (endDate) url += `&end_date=${endDate}`
     return apiClient.get(url)
   },
   get: (id) => apiClient.get(`/carts/${id}`),
@@ -62,13 +71,30 @@ export const cartsApi = {
 
 // ── Messages ──────────────────────────────────────────────
 export const messagesApi = {
-  list: (skip = 0, limit = 10) => apiClient.get(`/messages?skip=${skip}&limit=${limit}`),
-  stats: () => apiClient.get('/messages/stats'),
+  list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
+    let url = `/messages?skip=${skip}&limit=${limit}`
+    if (startDate) url += `&start_date=${startDate}`
+    if (endDate) url += `&end_date=${endDate}`
+    return apiClient.get(url)
+  },
+  stats: (startDate = '', endDate = '') => {
+    let url = '/messages/stats'
+    const params = []
+    if (startDate) params.push(`start_date=${startDate}`)
+    if (endDate) params.push(`end_date=${endDate}`)
+    if (params.length > 0) url += `?${params.join('&')}`
+    return apiClient.get(url)
+  },
 }
 
 // ── Customers ─────────────────────────────────────────────
 export const customersApi = {
-  list: (skip = 0, limit = 10) => apiClient.get(`/customers?skip=${skip}&limit=${limit}`),
+  list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
+    let url = `/customers?skip=${skip}&limit=${limit}`
+    if (startDate) url += `&start_date=${startDate}`
+    if (endDate) url += `&end_date=${endDate}`
+    return apiClient.get(url)
+  },
   get: (id) => apiClient.get(`/customers/${id}`),
   getCarts: (id) => apiClient.get(`/customers/${id}/carts`),
 }
