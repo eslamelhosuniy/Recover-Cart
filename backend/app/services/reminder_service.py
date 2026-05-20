@@ -67,7 +67,9 @@ class ReminderService:
         
         if not customer or not customer.mobile:
             raise ValueError("لا يوجد رقم جوال صالح لهذا العميل.")
-
+        if cart.reminder_sent:
+            raise ValueError("لقد تم تنبيه هذه السلة من قبل")
+            
         # Don't send if a message was sent to this customer in the last 24 hours
         from datetime import datetime, timedelta, timezone
         from sqlalchemy import select
