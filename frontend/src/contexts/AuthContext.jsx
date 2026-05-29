@@ -12,7 +12,6 @@ export function AuthProvider({ children }) {
   const fetchStores = useCallback(async () => {
     try {
       const res = await storesApi.list()
-      console.log('fetchStores response data:', res.data)
       const storesList = Array.isArray(res.data) ? res.data : []
       setStores(storesList)
       if (storesList.length > 0) {
@@ -28,11 +27,12 @@ export function AuthProvider({ children }) {
       }
     } catch (err) {
       console.error('Failed to fetch stores:', err)
-      throw err
+      setStores([])
+      setActiveStore(null)
     }
   }, [])
 
-  // On mount: verify stored token
+  // On mount: verify stored token and load stores
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (!token) {
@@ -40,8 +40,9 @@ export function AuthProvider({ children }) {
       return
     }
     authApi.me()
-      .then((res) => {
+      .then(async (res) => {
         setUser(res.data)
+        await fetchStores()
       })
       .catch(() => {
         localStorage.removeItem('access_token')
@@ -50,7 +51,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('activeStoreId')
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [fetchStores])
 
   useEffect(() => {
     if (user) {
@@ -67,8 +68,10 @@ export function AuthProvider({ children }) {
     localStorage.setItem('access_token', access_token)
     localStorage.setItem('recover_user', JSON.stringify(userData))
     setUser(userData)
+    // Eagerly fetch stores so data is ready before navigation
+    await fetchStores()
     return userData
-  }, [])
+  }, [fetchStores])
 
   const logout = useCallback(() => {
     localStorage.removeItem('access_token')
