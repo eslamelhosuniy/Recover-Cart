@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // On mount: verify stored token and load stores
+  // On mount: verify stored token
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (!token) {
@@ -40,9 +40,8 @@ export function AuthProvider({ children }) {
       return
     }
     authApi.me()
-      .then(async (res) => {
+      .then((res) => {
         setUser(res.data)
-        await fetchStores()
       })
       .catch(() => {
         localStorage.removeItem('access_token')
@@ -51,7 +50,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem('activeStoreId')
       })
       .finally(() => setLoading(false))
-  }, [fetchStores])
+  }, [])
 
   useEffect(() => {
     if (user) {
