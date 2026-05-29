@@ -14,15 +14,15 @@ class AnalyticsService:
     @staticmethod
     async def get_kpis(
         db: AsyncSession, 
-        user_id: UUID,
+        store_id: UUID,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
     ) -> DashboardKPIs:
-        """All KPIs are scoped to the authenticated user's store."""
+        """All KPIs are scoped to the store context."""
 
         total_carts_q = (
             select(func.count(AbandonedCart.id))
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
         )
         if start_date:
             total_carts_q = total_carts_q.where(AbandonedCart.abandoned_at >= start_date)
@@ -34,7 +34,7 @@ class AnalyticsService:
 
         recovered_carts_q = (
             select(func.count(AbandonedCart.id))
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
             .where(AbandonedCart.is_recovered == True)
         )
         if start_date:
@@ -52,7 +52,7 @@ class AnalyticsService:
         revenue_q = (
             select(func.sum(RecoveredCart.total))
             .join(AbandonedCart, AbandonedCart.id == RecoveredCart.cart_id)
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
             .where(AbandonedCart.is_recovered == True)
         )
         if start_date:
@@ -67,7 +67,7 @@ class AnalyticsService:
         received_q = (
             select(func.count(func.distinct(AbandonedCart.customer_id)))
             .join(MessageLog, AbandonedCart.id == MessageLog.cart_id)
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
             .where(MessageLog.status.in_(["accepted", "sent", "delivered", "read"]))
         )
         if start_date:
@@ -82,7 +82,7 @@ class AnalyticsService:
         received_cust_subquery = (
             select(AbandonedCart.customer_id)
             .join(MessageLog, AbandonedCart.id == MessageLog.cart_id)
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
             .where(MessageLog.status.in_(["accepted", "sent", "delivered", "read"]))
         )
         if start_date:
@@ -92,7 +92,7 @@ class AnalyticsService:
 
         not_received_q = (
             select(func.count(func.distinct(AbandonedCart.customer_id)))
-            .where(AbandonedCart.user_id == user_id)
+            .where(AbandonedCart.store_id == store_id)
             .where(AbandonedCart.customer_id.not_in(received_cust_subquery))
         )
         if start_date:
@@ -112,3 +112,4 @@ class AnalyticsService:
             received_messages_customers=received_messages_customers,
             not_received_messages_customers=not_received_messages_customers,
         )
+

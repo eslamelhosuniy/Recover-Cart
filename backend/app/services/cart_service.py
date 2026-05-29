@@ -16,7 +16,7 @@ class CartService:
         self.cart_repo = CartRepository()
         self.customer_repo = CustomerRepository()
 
-    async def process_abandoned_cart(self, db: AsyncSession, payload: dict, user_id: str) -> None:
+    async def process_abandoned_cart(self, db: AsyncSession, payload: dict, store_id: str) -> None:
         try:
             event_type = payload.get("event")
 
@@ -30,7 +30,7 @@ class CartService:
                 cart_res = await db.execute(
                     select(AbandonedCart)
                     .where(AbandonedCart.salla_cart_id == salla_cart_id)
-                    .where(AbandonedCart.user_id == user_id)
+                    .where(AbandonedCart.store_id == store_id)
                 )
                 cart = cart_res.scalars().first()
                 if cart:
@@ -46,6 +46,7 @@ class CartService:
                         
                         recovered = RecoveredCart(
                             cart_id=cart.id,
+                            store_id=store_id,
                             status=data.get("status", "purchased"),
                             currency=data.get("currency", "SAR"),
                             total=total_amt,
@@ -62,7 +63,7 @@ class CartService:
                 return
 
             # For abandoned.cart / abandoned.cart.update
-            customer = await self.customer_repo.get_by_salla_id(db, salla_customer_id, user_id)
+            customer = await self.customer_repo.get_by_salla_id(db, salla_customer_id, store_id)
             if not customer:
                 cust_in = CustomerCreate(
                     salla_customer_id=salla_customer_id,
@@ -72,11 +73,11 @@ class CartService:
                     email=customer_data.get("email")
                 )
                 cust_data = cust_in.model_dump()
-                cust_data["user_id"] = user_id
+                cust_data["store_id"] = store_id
                 customer = await self.customer_repo.create(db, cust_data)
 
             salla_cart_id = str(data.get("id"))
-            cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id, user_id)
+            cart = await self.cart_repo.get_by_salla_id(db, salla_cart_id, store_id)
             
             if not cart:
                 cart_value = 0.0
@@ -91,7 +92,7 @@ class CartService:
                         if isinstance(amounts, dict):
                             amt_total = amounts.get("total")
                             if isinstance(amt_total, dict):
-                                cart_value = float(amt_total.get("amount", 0.0))
+                                    cart_value = float(amt_total.get("amount", 0.0))
                             elif amt_total is not None:
                                 cart_value = float(amt_total)
                 except (ValueError, TypeError):
@@ -106,7 +107,7 @@ class CartService:
                     checkout_url=data.get("checkout_url")
                 )
                 cart_data = cart_in.model_dump()
-                cart_data["user_id"] = user_id
+                cart_data["store_id"] = store_id
                 await self.cart_repo.create(db, cart_data)
                 logger.info(f"Successfully processed abandoned cart: {salla_cart_id}")
             else:

@@ -6,14 +6,13 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from uuid import UUID
 
-from app.core.dependencies import get_db
-from app.core.security import get_current_user
+from app.core.dependencies import get_db, get_active_store
+from app.models.store import Store
 from app.repositories.customer_repository import CustomerRepository
 from app.schemas.customer_schema import CustomerResponse
 from app.schemas.cart_schema import CartResponse
 from app.schemas.common import PaginatedResponse
 from app.models.customer import Customer
-from app.models.user import User
 from app.models.abandoned_cart import AbandonedCart
 from app.utils.date_helpers import parse_date_range
 
@@ -28,19 +27,19 @@ async def get_customers(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     start_dt, end_dt = parse_date_range(start_date, end_date)
     customers = await customer_repo.get_all(
         db, 
-        user_id=current_user.id, 
+        store_id=active_store.id, 
         skip=skip, 
         limit=limit,
         start_date=start_dt,
         end_date=end_dt
     )
     
-    count_query = select(func.count(Customer.id)).where(Customer.user_id == current_user.id)
+    count_query = select(func.count(Customer.id)).where(Customer.store_id == active_store.id)
     if start_dt:
         count_query = count_query.where(Customer.created_at >= start_dt)
     if end_dt:
@@ -60,13 +59,13 @@ async def get_customers(
 async def get_customer(
     id: UUID, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     customer = await customer_repo.get_by_id(db, id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
         
-    if customer.user_id != current_user.id:
+    if customer.store_id != active_store.id:
         raise HTTPException(status_code=403, detail="Not authorized to access this customer")
         
     return customer
@@ -76,21 +75,23 @@ async def get_customer(
 async def get_customer_carts(
     id: UUID, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     customer = await customer_repo.get_by_id(db, id)
     if not customer:
         raise HTTPException(status_code=404, detail="العميل غير موجود")
         
-    if customer.user_id != current_user.id:
+    if customer.store_id != active_store.id:
         raise HTTPException(status_code=403, detail="ليس لديك صلاحية للوصول لبيانات هذا العميل")
 
     result = await db.execute(
         select(AbandonedCart)
         .where(AbandonedCart.customer_id == id)
+        .where(AbandonedCart.store_id == active_store.id)
         .options(selectinload(AbandonedCart.customer))
         .options(selectinload(AbandonedCart.recovered_details))
         .options(selectinload(AbandonedCart.messages))
         .order_by(AbandonedCart.abandoned_at.desc())
     )
     return result.scalars().all()
+

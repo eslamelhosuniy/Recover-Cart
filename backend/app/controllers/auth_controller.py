@@ -11,11 +11,7 @@ from app.core.security import (
     get_current_user,
 )
 from app.models.user import User
-from app.models.store_settings import StoreSettings
-from app.models.recovered_cart import RecoveredCart
-from app.models.message_log import MessageLog
-from app.models.abandoned_cart import AbandonedCart
-from app.models.customer import Customer
+from app.models.store import Store
 from app.schemas.user_schema import LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate
 import logging
 
@@ -65,6 +61,19 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
         is_active=True,
     )
     db.add(user)
+    await db.flush()
+
+    # Create default Store for first admin user
+    default_store = Store(
+        owner_id=user.id,
+        store_name=f"{user.username}'s Store",
+        whatsapp_phone_id="",
+        whatsapp_access_token="",
+        whatsapp_template_name="hello_world",
+        automation_enabled=True,
+    )
+    db.add(default_store)
+
     await db.commit()
     await db.refresh(user)
     logger.info(f"First admin user created: {user.username}")
@@ -129,9 +138,10 @@ async def create_user(
     db.add(user)
     await db.flush()
 
-    # Create default StoreSettings for this user
-    settings = StoreSettings(
-        user_id=user.id,
+    # Create default Store for this user
+    settings = Store(
+        owner_id=user.id,
+        store_name=f"{user.username}'s Store",
         whatsapp_phone_id="",
         whatsapp_access_token="",
         whatsapp_template_name="hello_world",
@@ -233,29 +243,10 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
-    # Cascading deletions
-    # 1. Fetch user's cart IDs
-    cart_ids_q = select(AbandonedCart.id).where(AbandonedCart.user_id == target_uuid)
-    cart_ids_res = await db.execute(cart_ids_q)
-    cart_ids = cart_ids_res.scalars().all()
-
-    if cart_ids:
-        # Delete related RecoveredCart and MessageLog rows
-        await db.execute(delete(RecoveredCart).where(RecoveredCart.cart_id.in_(cart_ids)))
-        await db.execute(delete(MessageLog).where(MessageLog.cart_id.in_(cart_ids)))
-        # Delete AbandonedCart rows
-        await db.execute(delete(AbandonedCart).where(AbandonedCart.id.in_(cart_ids)))
-
-    # 2. Delete Customer rows
-    await db.execute(delete(Customer).where(Customer.user_id == target_uuid))
-
-    # 3. Delete StoreSettings
-    await db.execute(delete(StoreSettings).where(StoreSettings.user_id == target_uuid))
-
-    # 4. Delete the User
-    await db.execute(delete(User).where(User.id == target_uuid))
-
+    # Cascading deletions will handle related stores, which in turn delete carts, customers, etc.
+    await db.delete(user)
     await db.commit()
     return {"detail": "User and all associated data deleted successfully."}
+
 
 

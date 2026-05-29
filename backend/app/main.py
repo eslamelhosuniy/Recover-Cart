@@ -42,7 +42,7 @@ def create_app() -> FastAPI:
         allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Salla-Signature"],
+        allow_headers=["Authorization", "Content-Type", "X-Salla-Signature", "X-Store-ID"],
     )
 
     app.add_exception_handler(AppException, app_exception_handler)

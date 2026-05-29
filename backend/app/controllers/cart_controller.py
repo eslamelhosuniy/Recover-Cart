@@ -11,8 +11,8 @@ from uuid import UUID
 from app.services.reminder_service import ReminderService
 from app.models.abandoned_cart import AbandonedCart
 
-from app.core.security import get_current_user
-from app.models.user import User
+from app.core.dependencies import get_active_store
+from app.models.store import Store
 
 from app.utils.date_helpers import parse_date_range
 
@@ -29,12 +29,12 @@ async def get_carts(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     start_dt, end_dt = parse_date_range(start_date, end_date)
     carts = await cart_repo.get_all(
         db, 
-        user_id=current_user.id, 
+        store_id=active_store.id, 
         skip=skip, 
         limit=limit, 
         status=status,
@@ -42,7 +42,7 @@ async def get_carts(
         end_date=end_dt
     )
     
-    count_query = select(func.count(AbandonedCart.id)).where(AbandonedCart.user_id == current_user.id)
+    count_query = select(func.count(AbandonedCart.id)).where(AbandonedCart.store_id == active_store.id)
     if status == "recovered":
         count_query = count_query.where(AbandonedCart.is_recovered == True)
     elif status == "abandoned":
@@ -67,13 +67,13 @@ async def get_carts(
 async def get_cart(
     id: UUID, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     cart = await cart_repo.get_by_id(db, id)
     if not cart:
         raise HTTPException(status_code=404, detail="Cart not found")
         
-    if cart.user_id != current_user.id:
+    if cart.store_id != active_store.id:
         raise HTTPException(status_code=403, detail="Not authorized to view this cart")
         
     return cart
@@ -83,14 +83,14 @@ async def get_cart(
 async def send_manual_reminder(
     id: UUID, 
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    active_store: Store = Depends(get_active_store)
 ):
     cart = await cart_repo.get_by_id(db, id)
     if not cart:
         raise HTTPException(status_code=404, detail="السلة غير موجودة.")
         
     # ownership check
-    if cart.user_id != current_user.id:
+    if cart.store_id != active_store.id:
         raise HTTPException(status_code=403, detail="ليس لديك صلاحية للوصول لهذه السلة.")
         
     # double recovery check
@@ -106,3 +106,4 @@ async def send_manual_reminder(
         return {"status": "success", "message": "تم إرسال تذكير واتساب اليدوي بنجاح"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+

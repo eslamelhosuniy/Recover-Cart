@@ -7,8 +7,7 @@ import hashlib
 import json
 from app.core.dependencies import get_db
 from app.services.cart_service import CartService
-from app.models.user import User
-from app.models.store_settings import StoreSettings
+from app.models.store import Store
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,20 +18,14 @@ cart_service = CartService()
 @router.post("/salla")
 async def salla_webhook(
     request: Request,
-    user_id: UUID = Query(...),
+    store_id: UUID = Query(...),
     db: AsyncSession = Depends(get_db)
 ):
-    # 1. Verify user exists
-    user_res = await db.execute(select(User).where(User.id == user_id))
-    user = user_res.scalars().first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    # 2. Fetch StoreSettings for user
-    settings_res = await db.execute(select(StoreSettings).where(StoreSettings.user_id == user.id))
-    settings = settings_res.scalars().first()
-    if not settings:
-        raise HTTPException(status_code=404, detail="Store settings not configured for this user")
+    # 1. Verify store exists
+    store_res = await db.execute(select(Store).where(Store.id == store_id))
+    store = store_res.scalars().first()
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found")
         
     body = await request.body()
 
@@ -47,6 +40,7 @@ async def salla_webhook(
         logger.info(f"Ignoring webhook event '{event_name}' (not registered or invalid in accepted_events).")
         return {"status": "success", "message": f"Event '{event_name}' ignored"}
         
-    await cart_service.process_abandoned_cart(db, payload, str(user.id))
+    await cart_service.process_abandoned_cart(db, payload, str(store.id))
     
     return {"status": "success", "message": "Webhook received and validated"}
+
