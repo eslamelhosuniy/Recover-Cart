@@ -7,6 +7,8 @@ from .store_controller import router as store_router
 from .webhook_controller import router as webhook_router
 from .auth_controller import router as auth_router
 from .whatsapp_webhook_controller import router as whatsapp_webhook_router
+from .email_marketing_controller import router as email_marketing_router
+from .email_webhook_controller import router as email_webhook_router
 
 routers = [
     auth_router,
@@ -17,5 +19,7 @@ routers = [
     cart_router,
     message_router,
     store_router,
-    logs_router
+    logs_router,
+    email_marketing_router,
+    email_webhook_router
 ]
