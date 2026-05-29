@@ -15,13 +15,13 @@ class CustomerRepository(BaseRepository[Customer]):
     async def get_all(
         self, 
         db: AsyncSession, 
-        user_id: UUID, 
+        store_id: UUID, 
         skip: int = 0, 
         limit: int = 10,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
     ) -> List[Customer]:
-        query = select(self.model).where(self.model.user_id == user_id)
+        query = select(self.model).where(self.model.store_id == store_id)
         if start_date:
             query = query.where(self.model.created_at >= start_date)
         if end_date:
@@ -55,11 +55,11 @@ class CustomerRepository(BaseRepository[Customer]):
             customer.total_carts = cart_count_res.scalar() or 0
         return customer
 
-    async def get_by_salla_id(self, db: AsyncSession, salla_customer_id: str, user_id: str) -> Optional[Customer]:
+    async def get_by_salla_id(self, db: AsyncSession, salla_customer_id: str, store_id: str) -> Optional[Customer]:
         result = await db.execute(
             select(self.model)
             .where(self.model.salla_customer_id == salla_customer_id)
-            .where(self.model.user_id == user_id)
+            .where(self.model.store_id == store_id)
         )
         customer = result.scalars().first()
         if customer:
@@ -69,3 +69,4 @@ class CustomerRepository(BaseRepository[Customer]):
             )
             customer.total_carts = cart_count_res.scalar() or 0
         return customer
+

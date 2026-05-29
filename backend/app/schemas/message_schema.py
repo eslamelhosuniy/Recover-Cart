@@ -17,10 +17,10 @@ class MessageCreate(MessageBase):
 class MessageResponse(MessageBase):
     id: UUID
     cart_id: UUID
-    whatsapp_msg_id: Optional[str]
-    sent_at: datetime
-    updated_at: datetime
-    error_message: Optional[str]
+    whatsapp_msg_id: Optional[str] = None
+    sent_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    error_message: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

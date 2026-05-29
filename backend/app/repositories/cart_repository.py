@@ -10,25 +10,25 @@ class CartRepository(BaseRepository[AbandonedCart]):
     def __init__(self):
         super().__init__(AbandonedCart)
 
-    async def get_by_salla_id(self, db: AsyncSession, salla_cart_id: str, user_id: str) -> Optional[AbandonedCart]:
+    async def get_by_salla_id(self, db: AsyncSession, salla_cart_id: str, store_id: str) -> Optional[AbandonedCart]:
         result = await db.execute(
             select(self.model)
             .where(self.model.salla_cart_id == salla_cart_id)
-            .where(self.model.user_id == user_id)
+            .where(self.model.store_id == store_id)
         )
         return result.scalars().first()
 
     async def get_all(
         self, 
         db: AsyncSession, 
-        user_id: any, 
+        store_id: any, 
         skip: int = 0, 
         limit: int = 10, 
         status: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None
     ) -> List[AbandonedCart]:
-        query = select(self.model).where(self.model.user_id == user_id)
+        query = select(self.model).where(self.model.store_id == store_id)
         
         if status == "recovered":
             query = query.where(self.model.is_recovered == True)
@@ -59,3 +59,4 @@ class CartRepository(BaseRepository[AbandonedCart]):
             .options(selectinload(self.model.messages))
         )
         return result.scalars().first()
+

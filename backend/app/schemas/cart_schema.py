@@ -21,9 +21,9 @@ class CartResponse(CartBase):
     customer_id: UUID
     reminder_sent: bool
     is_recovered: bool
-    abandoned_at: datetime
-    recovered_at: Optional[datetime]
-    created_at: datetime
+    abandoned_at: Optional[datetime] = None
+    recovered_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     customer: Optional[CustomerResponse] = None
     messages: Optional[List[MessageResponse]] = []
     recovered_details: Optional[RecoveredCartResponse] = None

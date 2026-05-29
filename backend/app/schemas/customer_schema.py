@@ -16,6 +16,6 @@ class CustomerCreate(CustomerBase):
 
 class CustomerResponse(CustomerBase):
     id: UUID
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
