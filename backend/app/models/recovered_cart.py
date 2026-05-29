@@ -9,6 +9,7 @@ class RecoveredCart(Base):
     __tablename__ = "recovered_carts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=False)
     cart_id = Column(UUID(as_uuid=True), ForeignKey("abandoned_carts.id"), unique=True, nullable=False)
     status = Column(String, default="purchased", nullable=False)
     currency = Column(String, default="SAR", nullable=False)
@@ -18,3 +19,4 @@ class RecoveredCart(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationship to parent AbandonedCart (backref is defined in AbandonedCart)
+

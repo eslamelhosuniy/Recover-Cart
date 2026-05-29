@@ -9,6 +9,7 @@ class MessageLog(Base):
     __tablename__ = "message_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=False)
     cart_id = Column(UUID(as_uuid=True), ForeignKey("abandoned_carts.id"), nullable=False)
     whatsapp_msg_id = Column(String, nullable=True)
     status = Column(String, default="pending", nullable=False)
@@ -18,3 +19,4 @@ class MessageLog(Base):
     error_message = Column(Text, nullable=True)
 
     cart = relationship("AbandonedCart", back_populates="messages")
+

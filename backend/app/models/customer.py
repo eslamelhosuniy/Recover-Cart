@@ -7,9 +7,10 @@ from app.core.database import Base
 
 class Customer(Base):
     __tablename__ = "customers"
+    __table_args__ = (UniqueConstraint('salla_customer_id', 'store_id', name='uq_customer_store'),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=False)
     salla_customer_id = Column(String, index=True, nullable=False)
     full_name = Column(String, nullable=False)
     mobile = Column(String, nullable=False)
@@ -19,3 +20,4 @@ class Customer(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     carts = relationship("AbandonedCart", back_populates="customer", cascade="all, delete-orphan")
+

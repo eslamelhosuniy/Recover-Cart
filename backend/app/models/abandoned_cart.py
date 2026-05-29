@@ -7,10 +7,10 @@ from app.core.database import Base
 
 class AbandonedCart(Base):
     __tablename__ = "abandoned_carts"
-    __table_args__ = (UniqueConstraint('salla_cart_id', 'user_id', name='uq_cart_user'),)
+    __table_args__ = (UniqueConstraint('salla_cart_id', 'store_id', name='uq_cart_store'),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=False)
     salla_cart_id = Column(String, index=True, nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
     cart_value = Column(Numeric(10, 2), nullable=False)
@@ -25,3 +25,4 @@ class AbandonedCart(Base):
     customer = relationship("Customer", back_populates="carts")
     messages = relationship("MessageLog", back_populates="cart", cascade="all, delete-orphan")
     recovered_details = relationship("RecoveredCart", backref="cart", uselist=False, cascade="all, delete-orphan")
+
