@@ -31,6 +31,19 @@ class EmailMarketingService:
             raise ValueError("Store missing SendGrid API key.")
         return await SendGridClient(settings.sendgrid_api_key).get_suppression_groups()
 
+    async def create_list(self, db: AsyncSession, store_id: str, name: str):
+        settings = await self.setting_repo.get_by_store_id(db, store_id)
+        if not settings or not settings.sendgrid_api_key:
+            raise ValueError("Store missing SendGrid API key.")
+        return await SendGridClient(settings.sendgrid_api_key).create_list(name)
+
+    async def create_suppression_group(self, db: AsyncSession, store_id: str, name: str, description: str, is_default: bool = False):
+        settings = await self.setting_repo.get_by_store_id(db, store_id)
+        if not settings or not settings.sendgrid_api_key:
+            raise ValueError("Store missing SendGrid API key.")
+        return await SendGridClient(settings.sendgrid_api_key).create_suppression_group(name, description, is_default)
+
+
     async def sync_pending_contacts(self, db: AsyncSession, store_id: str):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
         if not settings or not settings.sendgrid_api_key or not settings.sendgrid_default_list_id:

@@ -60,6 +60,29 @@ class SendGridClient:
                 return data
             return []
 
+    async def create_list(self, name: str) -> dict:
+        url = f"{self.BASE_URL}/marketing/lists"
+        payload = {"name": name}
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=self.headers, json=payload, timeout=10.0)
+            if response.status_code >= 400:
+                raise ValueError(f"SendGrid API Error: {response.status_code} - {response.text}")
+            return response.json()
+
+    async def create_suppression_group(self, name: str, description: str, is_default: bool = False) -> dict:
+        url = f"{self.BASE_URL}/asm/groups"
+        payload = {
+            "name": name,
+            "description": description,
+            "is_default": is_default
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=self.headers, json=payload, timeout=10.0)
+            if response.status_code >= 400:
+                raise ValueError(f"SendGrid API Error: {response.status_code} - {response.text}")
+            return response.json()
+
+
     async def schedule_single_send(self, campaign_id: str) -> dict:
         url = f"{self.BASE_URL}/marketing/singlesends/{campaign_id}/schedule"
         payload = {"send_at": "now"}

@@ -41,3 +41,11 @@ class SingleEmailSend(BaseModel):
     subject: str
     html_content: str
     from_name: Optional[str] = None
+
+class EmailListCreate(BaseModel):
+    name: str
+
+class SuppressionGroupCreate(BaseModel):
+    name: str
+    description: str
+    is_default: bool = False

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from app.core.dependencies import get_db
-from app.schemas.email_schemas import EmailSettingCreate, EmailSettingResponse, EmailContactCreate, EmailCampaignCreate, SingleEmailSend
+from app.schemas.email_schemas import EmailSettingCreate, EmailSettingResponse, EmailContactCreate, EmailCampaignCreate, SingleEmailSend, EmailListCreate, SuppressionGroupCreate
 from app.repositories.email_setting_repo import EmailSettingRepository
 from app.repositories.email_contact_repo import EmailContactRepository
 from app.services.email_marketing_service import EmailMarketingService
@@ -130,11 +130,27 @@ async def get_lists(store_id: UUID, db: AsyncSession = Depends(get_db), current_
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/lists/{store_id}")
+async def create_list(store_id: UUID, list_in: EmailListCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().create_list(db, str(store_id), list_in.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/suppression-groups/{store_id}")
 async def get_suppression_groups(store_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     await get_store_for_user(store_id, db, current_user)
     try:
         return await EmailMarketingService().get_suppression_groups(db, str(store_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/suppression-groups/{store_id}")
+async def create_suppression_group(store_id: UUID, group_in: SuppressionGroupCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().create_suppression_group(db, str(store_id), group_in.name, group_in.description, group_in.is_default)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
