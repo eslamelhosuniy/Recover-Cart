@@ -1,11 +1,36 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { authApi } from '../api/client'
+import { authApi, storesApi } from '../api/client'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [stores, setStores] = useState([])
+  const [activeStore, setActiveStore] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const fetchStores = useCallback(async () => {
+    try {
+      const res = await storesApi.list()
+      console.log('fetchStores response data:', res.data)
+      const storesList = Array.isArray(res.data) ? res.data : []
+      setStores(storesList)
+      if (storesList.length > 0) {
+        const cachedStoreId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+        const active = storesList.find(s => s.id === cachedStoreId) || storesList[0]
+        setActiveStore(active)
+        localStorage.setItem('active_store_id', active.id)
+        localStorage.setItem('activeStoreId', active.id)
+      } else {
+        setActiveStore(null)
+        localStorage.removeItem('active_store_id')
+        localStorage.removeItem('activeStoreId')
+      }
+    } catch (err) {
+      console.error('Failed to fetch stores:', err)
+      throw err
+    }
+  }, [])
 
   // On mount: verify stored token
   useEffect(() => {
@@ -15,13 +40,26 @@ export function AuthProvider({ children }) {
       return
     }
     authApi.me()
-      .then((res) => setUser(res.data))
+      .then((res) => {
+        setUser(res.data)
+      })
       .catch(() => {
         localStorage.removeItem('access_token')
         localStorage.removeItem('recover_user')
+        localStorage.removeItem('active_store_id')
+        localStorage.removeItem('activeStoreId')
       })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchStores()
+    } else {
+      setStores([])
+      setActiveStore(null)
+    }
+  }, [user, fetchStores])
 
   const login = useCallback(async (username, password) => {
     const res = await authApi.login({ username, password })
@@ -35,11 +73,37 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('recover_user')
+    localStorage.removeItem('active_store_id')
+    localStorage.removeItem('activeStoreId')
     setUser(null)
+    setStores([])
+    setActiveStore(null)
   }, [])
 
+  const switchStore = useCallback((storeId) => {
+    localStorage.setItem('active_store_id', storeId)
+    localStorage.setItem('activeStoreId', storeId)
+    const active = Array.isArray(stores) ? stores.find(s => s.id === storeId) : null
+    if (active) {
+      setActiveStore(active)
+    }
+    window.location.reload()
+  }, [stores])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      stores, 
+      activeStore, 
+      activeStoreId: activeStore?.id || null,
+      activeStoreName: activeStore?.store_name || null,
+      loading, 
+      login, 
+      logout, 
+      switchStore, 
+      fetchStores,
+      isAuthenticated: !!user 
+    }}>
       {children}
     </AuthContext.Provider>
   )

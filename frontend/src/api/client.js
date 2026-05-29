@@ -1,17 +1,27 @@
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1'
+const getApiBase = () => {
+  const envBase = import.meta.env.VITE_API_BASE || '/api/v1'
+  if (envBase.startsWith('/') && typeof window !== 'undefined') {
+    return window.location.origin + envBase
+  }
+  return envBase
+}
 
 const apiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: getApiBase(),
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Inject JWT on every request
+// Inject JWT and X-Store-ID on every request
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  const storeId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+  if (storeId) {
+    config.headers['X-Store-ID'] = storeId
   }
   return config
 })
@@ -99,11 +109,25 @@ export const customersApi = {
   getCarts: (id) => apiClient.get(`/customers/${id}/carts`),
 }
 
+// ── Stores ──────────────────────────────────────────────
+export const storesApi = {
+  list: () => apiClient.get('/stores'),
+  create: (data) => apiClient.post('/stores', data),
+  get: (id) => apiClient.get(`/stores/${id}`),
+  update: (id, data) => apiClient.put(`/stores/${id}`, data),
+  delete: (id) => apiClient.delete(`/stores/${id}`),
+}
+
 // ── Settings ──────────────────────────────────────────────
 export const settingsApi = {
-  get: () => apiClient.get('/settings'),
-  create: (data) => apiClient.post('/settings', data),
-  update: (data) => apiClient.put('/settings', data),
+  get: () => {
+    const storeId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+    return apiClient.get(`/stores/${storeId}`)
+  },
+  update: (data) => {
+    const storeId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+    return apiClient.put(`/stores/${storeId}`, data)
+  },
 }
 
 // ── Logs ──────────────────────────────────────────────────
