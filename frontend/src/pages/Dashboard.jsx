@@ -6,9 +6,11 @@ import Spinner from '../components/ui/Spinner'
 import EmptyState from '../components/ui/EmptyState'
 import UnifiedFilter from '../components/ui/UnifiedFilter'
 import { dashboardApi, cartsApi } from '../api/client'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { activeStore, loading: authLoading } = useAuth()
   const [kpis, setKpis] = useState(null)
   const [recentCarts, setRecentCarts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -45,13 +47,16 @@ export default function Dashboard() {
       setLoading(false)
       if (isRefresh) setRefreshing(false)
     }
-  }, [fetchNextJob, startDate, endDate])
+  }, [fetchNextJob, startDate, endDate, activeStore])
 
+  // Only fetch data after auth is loaded and activeStore is set
   useEffect(() => {
+    if (authLoading || !activeStore) return
+    
     fetchData()
     const interval = setInterval(fetchNextJob, 5 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [fetchData, fetchNextJob])
+  }, [fetchData, fetchNextJob, activeStore, authLoading])
 
   useEffect(() => {
     if (!nextRun) return
@@ -81,7 +86,7 @@ export default function Dashboard() {
     return () => clearInterval(timerInterval)
   }, [nextRun])
 
-  if (loading && !kpis) {
+  if ((loading && !kpis) || (authLoading && !activeStore)) {
     return <Spinner center />
   }
 

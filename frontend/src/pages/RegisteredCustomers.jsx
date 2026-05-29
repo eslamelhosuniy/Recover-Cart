@@ -292,7 +292,7 @@ export default function RegisteredCustomers() {
                       ) : (
                         <span className="badge badge-info" style={{ fontWeight: '700', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                           <i className="fa-solid fa-store" style={{ marginLeft: '4px' }}></i>
-                          حساب متجر
+                         حساب مستخدم 
                         </span>
                       )}
                     </td>
@@ -488,7 +488,7 @@ export default function RegisteredCustomers() {
                   value={formData.is_admin ? 'true' : 'false'}
                   onChange={(e) => setFormData({ ...formData, is_admin: e.target.value === 'true' })}
                 >
-                  <option value="false">حساب متجر (Store Account)</option>
+                  <option value="false">حساب مستخدم (User)</option>
                   <option value="true">حساب مدير (Administrator)</option>
                 </select>
               </div>
