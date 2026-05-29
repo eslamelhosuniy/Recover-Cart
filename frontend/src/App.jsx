@@ -12,6 +12,8 @@ import Messages from './pages/Messages'
 import Customers from './pages/Customers'
 import RegisteredCustomers from './pages/RegisteredCustomers'
 import Settings from './pages/Settings'
+import Stores from './pages/Stores'
+import AdminStores from './pages/AdminStores'
 
 export default function App() {
   return (
@@ -31,6 +33,8 @@ export default function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="stores" element={<Stores />} />
+            <Route path="admin-stores" element={<AdminStores />} />
             <Route path="carts" element={<Carts />} />
             <Route path="carts/recovered" element={<RecoveredCarts />} />
             <Route path="messages" element={<Messages />} />
@@ -47,3 +51,4 @@ export default function App() {
     </NotificationProvider>
   )
 }
+

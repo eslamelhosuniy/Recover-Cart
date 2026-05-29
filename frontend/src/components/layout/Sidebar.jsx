@@ -67,6 +67,16 @@ export default function Sidebar({ isOpen, onClose }) {
             <span>لوحة القيادة</span>
           </NavLink>
 
+          {/* Stores item */}
+          <NavLink
+            to="/stores"
+            className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+            onClick={onClose}
+          >
+            <i className="fa-solid fa-store nav-icon" />
+            <span>المتاجر</span>
+          </NavLink>
+
           {/* Carts Dropdown Trigger */}
           <button
             type="button"
@@ -111,6 +121,14 @@ export default function Sidebar({ isOpen, onClose }) {
           {user && user.is_admin && (
             <>
               <div className="sidebar-section-title">لوحة الإدارة</div>
+              <NavLink
+                to="/admin-stores"
+                className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+                onClick={onClose}
+              >
+                <i className="fa-solid fa-server nav-icon" />
+                <span>متاجر المنصة</span>
+              </NavLink>
               <NavLink
                 to="/registered-customers"
                 className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}

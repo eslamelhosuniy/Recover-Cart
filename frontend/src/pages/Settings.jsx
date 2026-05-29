@@ -5,11 +5,11 @@ import { useNotification } from '../contexts/NotificationContext'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Settings() {
-  const { user } = useAuth()
-  const userId = user?.id || ''
+  const { user, activeStore } = useAuth()
+  const activeStoreId = activeStore?.id || ''
   const origin = window.location.origin
-  const sallaWebhookUrl = `${origin}/api/v1/webhooks/salla?user_id=${userId}`
-  const whatsappWebhookUrl = `${origin}/api/v1/webhooks/whatsapp?user_id=${userId}`
+  const sallaWebhookUrl = `${origin}/api/v1/webhooks/salla?store_id=${activeStoreId}`
+  const whatsappWebhookUrl = `${origin}/api/v1/webhooks/whatsapp?store_id=${activeStoreId}`
 
   const [formData, setFormData] = useState({
     salla_webhook_secret: '',
@@ -23,6 +23,7 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [isNew, setIsNew] = useState(true)
   const { showNotification } = useNotification()
+
 
   useEffect(() => {
     settingsApi.get()
