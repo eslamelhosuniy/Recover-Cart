@@ -184,11 +184,11 @@ export default function Stores() {
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
                 {!isActiveContext && (
                   <button className="btn btn-secondary btn-sm" onClick={() => switchStore(store.id)} style={{ flex: 1 }}>
-                    تفعيل المتجر
+                    الدخول للمتجر
                   </button>
                 )}
                 <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEdit(store)} style={{ flex: isActiveContext ? 1 : 'none' }}>
-                  تعديل التكوين
+                  تعديل المتجر
                 </button>
                 {user?.is_admin && (
                   <button className="btn btn-danger btn-sm" onClick={() => handleDelete(store.id)} style={{ padding: '0 0.75rem' }}>
