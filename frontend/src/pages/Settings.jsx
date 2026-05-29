@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { settingsApi } from '../api/client'
+import { settingsApi, emailMarketingApi } from '../api/client'
 import Spinner from '../components/ui/Spinner'
 import { useNotification } from '../contexts/NotificationContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -19,6 +19,14 @@ export default function Settings() {
     automation_enabled: true,
     coupon_code: '',
   })
+  
+  const [emailData, setEmailData] = useState({
+    sendgrid_api_key: '',
+    sendgrid_default_list_id: '',
+    from_email: '',
+    from_name: '',
+    is_active: false,
+  })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isNew, setIsNew] = useState(true)
@@ -26,37 +34,54 @@ export default function Settings() {
 
 
   useEffect(() => {
-    settingsApi.get()
-      .then((res) => {
-        setFormData(res.data)
+    Promise.allSettled([
+      settingsApi.get(),
+      emailMarketingApi.getSettings(activeStoreId)
+    ]).then(([settingsRes, emailRes]) => {
+      if (settingsRes.status === 'fulfilled') {
+        setFormData(settingsRes.value.data)
         setIsNew(false)
-      })
-      .catch((err) => {
-        if (err.response?.status === 404) {
-          setIsNew(true)
-        }
-      })
-      .finally(() => setLoading(false))
-  }, [])
+      } else if (settingsRes.reason.response?.status === 404) {
+        setIsNew(true)
+      }
+      
+      if (emailRes.status === 'fulfilled') {
+        setEmailData(emailRes.value.data)
+      }
+    }).finally(() => setLoading(false))
+  }, [activeStoreId])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    if (name in emailData) {
+      setEmailData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }))
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     try {
+      const promises = []
+      
       if (isNew) {
-        await settingsApi.create(formData)
-        setIsNew(false)
+        promises.push(settingsApi.create(formData).then(() => setIsNew(false)))
       } else {
-        await settingsApi.update(formData)
+        promises.push(settingsApi.update(formData))
       }
+      
+      promises.push(emailMarketingApi.updateSettings(activeStoreId, emailData))
+      
+      await Promise.all(promises)
+      
       showNotification("تم حفظ الإعدادات بنجاح", 'success')
     } catch (err) {
       showNotification(err.response?.data?.detail || 'حدث خطأ أثناء الحفظ.', 'error')
@@ -376,6 +401,113 @@ export default function Settings() {
                     <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم شراء سلة مهجورة</span>
                   </div>
                   <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>abandoned.cart.purchased</span>
+                </div>
+              </div>
+            </div>
+
+            {/* SendGrid Configuration Card */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 25, 37, 0.7) 0%, rgba(15, 17, 26, 0.8) 100%)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem'
+              }}
+            >
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0ea5e9', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-envelope" />
+                إعدادات التسويق عبر الإيميل (SendGrid)
+              </h3>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  مفتاح واجهة برمجة التطبيقات (API Key)
+                </label>
+                <input
+                  type="password"
+                  name="sendgrid_api_key"
+                  className="form-input"
+                  value={emailData.sendgrid_api_key || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="SG.xxxxxxxxxxxxxxxxxxxx"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    إيميل المرسل (From Email)
+                  </label>
+                  <input
+                    type="email"
+                    name="from_email"
+                    className="form-input"
+                    value={emailData.from_email || ''}
+                    onChange={handleChange}
+                    dir="ltr"
+                    placeholder="marketing@yourdomain.com"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    اسم المرسل (From Name)
+                  </label>
+                  <input
+                    type="text"
+                    name="from_name"
+                    className="form-input"
+                    value={emailData.from_name || ''}
+                    onChange={handleChange}
+                    placeholder="مثال: متجر الهدايا"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  معرف القائمة الافتراضية (Default List ID)
+                </label>
+                <input
+                  type="text"
+                  name="sendgrid_default_list_id"
+                  className="form-input"
+                  value={emailData.sendgrid_default_list_id || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="مثال: 11a22b33c-44d5"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+              </div>
+
+              <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>تفعيل موديول الإيميل</h4>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '4px 0 0 0' }}>
+                      تفعيل أو تعطيل خواص الإيميل لهذا المتجر.
+                    </p>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      name="is_active"
+                      className="toggle-input"
+                      checked={emailData.is_active}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="is_active" className="toggle-label"></label>
+                  </div>
                 </div>
               </div>
             </div>

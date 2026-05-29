@@ -14,6 +14,8 @@ import RegisteredCustomers from './pages/RegisteredCustomers'
 import Settings from './pages/Settings'
 import Stores from './pages/Stores'
 import AdminStores from './pages/AdminStores'
+import EmailContacts from './pages/EmailContacts'
+import EmailCampaigns from './pages/EmailCampaigns'
 
 export default function App() {
   return (
@@ -41,6 +43,8 @@ export default function App() {
             <Route path="customers" element={<Customers />} />
             <Route path="registered-customers" element={<RegisteredCustomers />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="email/contacts" element={<EmailContacts />} />
+            <Route path="email/campaigns" element={<EmailCampaigns />} />
           </Route>
 
           {/* Catch-all */}

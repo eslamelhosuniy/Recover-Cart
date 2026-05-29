@@ -9,6 +9,12 @@ const cartSubItems = [
   { to: '/customers', icon: 'fa-users', label: 'العملاء' },
 ]
 
+const emailSubItems = [
+  { to: '/email/contacts', icon: 'fa-address-book', label: 'جهات الاتصال' },
+  { to: '/email/campaigns', icon: 'fa-paper-plane', label: 'الحملات الإعلانية' },
+]
+
+
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -22,7 +28,13 @@ export default function Sidebar({ isOpen, onClose }) {
     return location.pathname.startsWith(item.to)
   })
 
+  // Determine if any of the sub-items inside "الحملات الإعلانية" is active
+  const isEmailActive = emailSubItems.some(item => {
+    return location.pathname.startsWith(item.to)
+  })
+
   const [cartsDropdownOpen, setCartsDropdownOpen] = useState(isCartActive)
+  const [emailDropdownOpen, setEmailDropdownOpen] = useState(isEmailActive)
 
   // Keep dropdown open if the active route is one of the sub-items
   useEffect(() => {
@@ -30,6 +42,12 @@ export default function Sidebar({ isOpen, onClose }) {
       setCartsDropdownOpen(true)
     }
   }, [isCartActive])
+
+  useEffect(() => {
+    if (isEmailActive) {
+      setEmailDropdownOpen(true)
+    }
+  }, [isEmailActive])
 
   const handleLogout = () => {
     logout()
@@ -103,6 +121,46 @@ export default function Sidebar({ isOpen, onClose }) {
           {cartsDropdownOpen && (
             <div className="sidebar-dropdown-menu">
               {cartSubItems.map(({ to, icon, label, exact }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={exact}
+                  className={({ isActive }) => isActive ? 'active' : ''}
+                  onClick={onClose}
+                >
+                  <i className={`fa-solid ${icon}`} style={{ fontSize: '0.95rem' }} />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          )}
+
+          {/* Email Marketing Dropdown Trigger */}
+          <button
+            type="button"
+            className={`sidebar-dropdown-toggle ${isEmailActive ? 'active' : ''}`}
+            onClick={() => setEmailDropdownOpen(!emailDropdownOpen)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '0.25rem' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '.9rem' }}>
+              <i className="fa-solid fa-envelope-open-text nav-icon" style={{ fontSize: '1.1rem', minWidth: '22px', textAlign: 'center' }} />
+              <span>الحملات الإعلانية</span>
+            </span>
+            <i
+              className="fa-solid fa-chevron-down"
+              style={{
+                fontSize: '.75rem',
+                marginRight: 'auto',
+                transition: 'transform 0.2s ease',
+                transform: emailDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+              }}
+            />
+          </button>
+
+          {/* Email Marketing Dropdown Menu */}
+          {emailDropdownOpen && (
+            <div className="sidebar-dropdown-menu">
+              {emailSubItems.map(({ to, icon, label, exact }) => (
                 <NavLink
                   key={to}
                   to={to}

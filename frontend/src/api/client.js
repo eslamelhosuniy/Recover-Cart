@@ -135,4 +135,28 @@ export const logsApi = {
   errors: (skip = 0, limit = 10) => apiClient.get(`/logs/errors?skip=${skip}&limit=${limit}`),
 }
 
+// ── Email Marketing ───────────────────────────────────────
+export const emailMarketingApi = {
+  getSettings: (storeId) => apiClient.get(`/email-marketing/settings/${storeId}`),
+  updateSettings: (storeId, data) => apiClient.put(`/email-marketing/settings/${storeId}`, data),
+  
+  createContact: (storeId, data) => apiClient.post(`/email-marketing/contacts/${storeId}`, data),
+  uploadContacts: (storeId, formData) => apiClient.post(`/email-marketing/contacts/${storeId}/upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  
+  createCampaign: (storeId, data) => apiClient.post(`/email-marketing/campaigns/${storeId}`, data),
+  sendCampaign: (storeId, campaignId) => apiClient.post(`/email-marketing/campaigns/${storeId}/${campaignId}/send`),
+  
+  sendSingleEmail: (storeId, data) => apiClient.post(`/email-marketing/send-email/${storeId}`, data),
+  
+  getSenders: (storeId) => apiClient.get(`/email-marketing/senders/${storeId}`),
+  getLists: (storeId) => apiClient.get(`/email-marketing/lists/${storeId}`),
+  createList: (storeId, data) => apiClient.post(`/email-marketing/lists/${storeId}`, data),
+  getSuppressionGroups: (storeId) => apiClient.get(`/email-marketing/suppression-groups/${storeId}`),
+  createSuppressionGroup: (storeId, data) => apiClient.post(`/email-marketing/suppression-groups/${storeId}`, data),
+}
+
 export default apiClient
