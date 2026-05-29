@@ -156,7 +156,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   </span>
                 ) : (
                   <span className="badge badge-info" style={{ fontSize: '.65rem', padding: '.15rem .5rem', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
-                    متجر
+                    مستخدم
                   </span>
                 )}
               </div>
