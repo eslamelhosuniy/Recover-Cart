@@ -281,10 +281,11 @@ class ReminderService:
             )
             
             msg_id = response.get("messages", [{}])[0].get("id")
+            message_status = response.get("messages",[{}])[0].get('message_status')
             msg_in = MessageCreate(
                 cart_id=cart.id,
                 whatsapp_msg_id=msg_id,
-                status="accepted",
+                status=message_status,
                 channel="whatsapp"
             )
             msg_data = msg_in.model_dump()
