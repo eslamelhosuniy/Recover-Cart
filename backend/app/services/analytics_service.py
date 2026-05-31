@@ -7,6 +7,8 @@ from typing import Optional
 from app.models.abandoned_cart import AbandonedCart
 from app.models.recovered_cart import RecoveredCart
 from app.models.message_log import MessageLog
+from app.models.shipment_review import ShipmentReview
+from app.models.shipment_message_log import ShipmentMessageLog
 from app.schemas.dashboard_schema import DashboardKPIs
 
 
@@ -103,6 +105,65 @@ class AnalyticsService:
         not_received_result = await db.execute(not_received_q)
         not_received_messages_customers = not_received_result.scalar() or 0
 
+        shipment_q = (
+            select(func.count(ShipmentReview.id))
+            .where(ShipmentReview.store_id == store_id)
+        )
+        if start_date:
+            shipment_q = shipment_q.where(ShipmentReview.created_at >= start_date)
+        if end_date:
+            shipment_q = shipment_q.where(ShipmentReview.created_at <= end_date)
+        shipment_result = await db.execute(shipment_q)
+        total_shipments = shipment_result.scalar() or 0
+
+        delivered_q = (
+            select(func.count(ShipmentReview.id))
+            .where(ShipmentReview.store_id == store_id)
+            .where(ShipmentReview.delivered_at != None)
+        )
+        if start_date:
+            delivered_q = delivered_q.where(ShipmentReview.created_at >= start_date)
+        if end_date:
+            delivered_q = delivered_q.where(ShipmentReview.created_at <= end_date)
+        delivered_result = await db.execute(delivered_q)
+        delivered_shipments = delivered_result.scalar() or 0
+
+        review_sent_q = (
+            select(func.count(ShipmentReview.id))
+            .where(ShipmentReview.store_id == store_id)
+            .where(ShipmentReview.review_sent == True)
+        )
+        if start_date:
+            review_sent_q = review_sent_q.where(ShipmentReview.created_at >= start_date)
+        if end_date:
+            review_sent_q = review_sent_q.where(ShipmentReview.created_at <= end_date)
+        review_sent_result = await db.execute(review_sent_q)
+        review_requests_sent = review_sent_result.scalar() or 0
+
+        pending_review_q = (
+            select(func.count(ShipmentReview.id))
+            .where(ShipmentReview.store_id == store_id)
+            .where(ShipmentReview.review_sent == False)
+        )
+        if start_date:
+            pending_review_q = pending_review_q.where(ShipmentReview.created_at >= start_date)
+        if end_date:
+            pending_review_q = pending_review_q.where(ShipmentReview.created_at <= end_date)
+        pending_review_result = await db.execute(pending_review_q)
+        pending_review_shipments = pending_review_result.scalar() or 0
+
+        failed_review_q = (
+            select(func.count(ShipmentMessageLog.id))
+            .where(ShipmentMessageLog.store_id == store_id)
+            .where(ShipmentMessageLog.status == "failed")
+        )
+        if start_date:
+            failed_review_q = failed_review_q.where(ShipmentMessageLog.sent_at >= start_date)
+        if end_date:
+            failed_review_q = failed_review_q.where(ShipmentMessageLog.sent_at <= end_date)
+        failed_review_result = await db.execute(failed_review_q)
+        failed_review_messages = failed_review_result.scalar() or 0
+
         return DashboardKPIs(
             total_carts=total_carts,
             recovered_carts=recovered_carts,
@@ -111,5 +172,10 @@ class AnalyticsService:
             total_revenue_recovered=total_revenue_recovered,
             received_messages_customers=received_messages_customers,
             not_received_messages_customers=not_received_messages_customers,
+            total_shipments=total_shipments,
+            delivered_shipments=delivered_shipments,
+            review_requests_sent=review_requests_sent,
+            pending_review_shipments=pending_review_shipments,
+            failed_review_messages=failed_review_messages,
         )
 

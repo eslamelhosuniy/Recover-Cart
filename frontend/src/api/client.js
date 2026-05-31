@@ -79,6 +79,26 @@ export const cartsApi = {
   remind: (id) => apiClient.post(`/carts/${id}/remind`),
 }
 
+// ── Shipments ────────────────────────────────────────────────
+export const shipmentsApi = {
+  list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
+    let url = `/shipments?skip=${skip}&limit=${limit}`
+    const params = []
+    if (startDate) params.push(`start_date=${startDate}`)
+    if (endDate) params.push(`end_date=${endDate}`)
+    if (params.length > 0) url += `&${params.join('&')}`
+    return apiClient.get(url)
+  },
+  stats: (startDate = '', endDate = '') => {
+    let url = '/shipments/stats'
+    const params = []
+    if (startDate) params.push(`start_date=${startDate}`)
+    if (endDate) params.push(`end_date=${endDate}`)
+    if (params.length > 0) url += `?${params.join('&')}`
+    return apiClient.get(url)
+  },
+}
+
 // ── Messages ──────────────────────────────────────────────
 export const messagesApi = {
   list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
@@ -120,14 +140,19 @@ export const storesApi = {
 
 // ── Settings ──────────────────────────────────────────────
 export const settingsApi = {
-  get: () => {
-    const storeId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+  get: (storeId) => {
+    if (!storeId) {
+      return Promise.reject({ response: { status: 400, data: { detail: 'Active store id is missing' } } })
+    }
     return apiClient.get(`/stores/${storeId}`)
   },
-  update: (data) => {
-    const storeId = localStorage.getItem('active_store_id') || localStorage.getItem('activeStoreId')
+  update: (storeId, data) => {
+    if (!storeId) {
+      return Promise.reject({ response: { status: 400, data: { detail: 'Active store id is missing' } } })
+    }
     return apiClient.put(`/stores/${storeId}`, data)
   },
+  create: (data) => apiClient.post('/stores', data),
 }
 
 // ── Logs ──────────────────────────────────────────────────

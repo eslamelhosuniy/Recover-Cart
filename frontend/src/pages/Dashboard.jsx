@@ -217,6 +217,34 @@ export default function Dashboard() {
             sub="لم يتم شرائها بعد"
           />
           <KPICard
+            label="إجمالي الشحنات"
+            value={kpis.total_shipments}
+            icon="fa-box-open"
+            iconColor="#8b5cf6"
+            sub="تم استلام إشعارات الشحن"
+          />
+          {/* <KPICard
+            label="طلبات المراجعة المرسلة"
+            value={kpis.review_requests_sent}
+            icon="fa-paper-plane-top"
+            iconColor="#10b981"
+            sub="رسائل طلب المراجعة"
+          /> */}
+          <KPICard
+            label="رسائل مراجعة تم تسليمها / رسائل مراجعة معلقة"
+            value={`${kpis.delivered_shipments} / ${kpis.pending_review_shipments}`}
+            icon="fa-truck-fast"
+            iconColor="#38bdf8"
+            sub="تم تسليمها / لم تُرسل بعد"
+          />
+          {/* <KPICard
+            label="رسائل مراجعة فاشلة"
+            value={kpis.failed_review_messages}
+            icon="fa-circle-exclamation"
+            iconColor="#ef4444"
+            sub="فشل إرسالها أو تسليمها"
+          /> */}
+          <KPICard
             label="عملاء استلموا تذكير"
             value={kpis.received_messages_customers}
             icon="fa-user-check"
