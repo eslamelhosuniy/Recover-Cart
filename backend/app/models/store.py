@@ -16,11 +16,15 @@ class Store(Base):
     salla_webhook_secret = Column(String, nullable=True)
     whatsapp_phone_id = Column(String, nullable=True)
     whatsapp_access_token = Column(String, nullable=True)
+    whatsapp_webhook_verify_token = Column(String, nullable=True)
     whatsapp_template_name = Column(String, nullable=False, default="hello_world")
     coupon_code = Column(String, nullable=True)
     automation_enabled = Column(Boolean, default=True, nullable=False)
     reminder_delay_hours = Column(Integer, default=1, nullable=False)
     max_retries = Column(Integer, default=3, nullable=False)
+    shipment_review_enabled = Column(Boolean, default=True, nullable=False)
+    shipment_review_delay_hours = Column(Integer, default=24, nullable=False)
+    shipment_review_template_name = Column(String, nullable=False, default="shipment_review")
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
@@ -34,4 +38,6 @@ class Store(Base):
     carts = relationship("AbandonedCart", backref="store", cascade="all, delete-orphan")
     message_logs = relationship("MessageLog", backref="store", cascade="all, delete-orphan")
     recovered_carts = relationship("RecoveredCart", backref="store", cascade="all, delete-orphan")
+    shipment_reviews = relationship("ShipmentReview", back_populates="store", cascade="all, delete-orphan")
+    shipment_message_logs = relationship("ShipmentMessageLog", back_populates="store", cascade="all, delete-orphan")
 

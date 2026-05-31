@@ -15,7 +15,11 @@ export default function Settings() {
     salla_webhook_secret: '',
     whatsapp_phone_id: '',
     whatsapp_access_token: '',
+    whatsapp_webhook_verify_token: '',
     whatsapp_template_name: 'hello_world',
+    shipment_review_enabled: true,
+    shipment_review_delay_hours: 24,
+    shipment_review_template_name: 'shipment_review',
     automation_enabled: true,
     coupon_code: '',
   })
@@ -34,57 +38,94 @@ export default function Settings() {
 
 
   useEffect(() => {
+    if (!activeStoreId) {
+      setLoading(false)
+      return
+    }
+
     Promise.allSettled([
-      settingsApi.get(),
+      settingsApi.get(activeStoreId),
       emailMarketingApi.getSettings(activeStoreId)
     ]).then(([settingsRes, emailRes]) => {
-      if (settingsRes.status === 'fulfilled') {
-        setFormData(settingsRes.value.data)
+      if (settingsRes.status === 'fulfilled' && settingsRes.value?.data && typeof settingsRes.value.data === 'object') {
+        setFormData(prev => ({ ...prev, ...settingsRes.value.data }))
         setIsNew(false)
-      } else if (settingsRes.reason.response?.status === 404) {
+      } else if (settingsRes.status === 'rejected' && settingsRes.reason.response?.status === 404) {
         setIsNew(true)
       }
-      
-      if (emailRes.status === 'fulfilled') {
-        setEmailData(emailRes.value.data)
+
+      if (emailRes.status === 'fulfilled' && emailRes.value?.data && typeof emailRes.value.data === 'object') {
+        setEmailData(prev => ({ ...prev, ...emailRes.value.data }))
       }
     }).finally(() => setLoading(false))
   }, [activeStoreId])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    if (name in emailData) {
+    const parsedValue = type === 'checkbox'
+      ? checked
+      : type === 'number'
+        ? value === ''
+          ? ''
+          : Number(value)
+        : value
+
+    const isEmailField = emailData && typeof emailData === 'object' && Object.prototype.hasOwnProperty.call(emailData, name)
+
+    if (isEmailField) {
       setEmailData(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: parsedValue
       }))
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: parsedValue
       }))
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!activeStoreId) {
+      showNotification('الرجاء اختيار متجر صالح قبل حفظ الإعدادات.', 'error')
+      return
+    }
+
     setSaving(true)
     try {
-      const promises = []
-      
       if (isNew) {
-        promises.push(settingsApi.create(formData).then(() => setIsNew(false)))
+        await settingsApi.create(formData)
+        setIsNew(false)
       } else {
-        promises.push(settingsApi.update(formData))
+        await settingsApi.update(activeStoreId, formData)
       }
-      
-      promises.push(emailMarketingApi.updateSettings(activeStoreId, emailData))
-      
-      await Promise.all(promises)
-      
-      showNotification("تم حفظ الإعدادات بنجاح", 'success')
+
+      // Only attempt to update email settings if email is active
+      if (emailData.is_active) {
+        try {
+          await emailMarketingApi.updateSettings(activeStoreId, emailData)
+          showNotification("تم حفظ الإعدادات بنجاح", 'success')
+        } catch (emailErr) {
+          // Extract error message with proper type checking
+          let emailMessage = 'فشل حفظ إعدادات الإيميل.'
+          if (emailErr.response?.data) {
+            if (typeof emailErr.response.data.detail === 'string') {
+              emailMessage = emailErr.response.data.detail
+            } else if (typeof emailErr.response.data.message === 'string') {
+              emailMessage = emailErr.response.data.message
+            }
+          } else if (typeof emailErr.message === 'string') {
+            emailMessage = emailErr.message
+          }
+          showNotification(`تم حفظ إعدادات المتجر. ${emailMessage}`, 'warning')
+        }
+      } else {
+        showNotification("تم حفظ الإعدادات بنجاح", 'success')
+      }
     } catch (err) {
-      showNotification(err.response?.data?.detail || 'حدث خطأ أثناء الحفظ.', 'error')
+      const message = err.response?.data?.detail || err.response?.data?.message || err.message || 'حدث خطأ أثناء الحفظ.'
+      showNotification(message, 'error')
     } finally {
       setSaving(false)
     }
@@ -215,6 +256,58 @@ export default function Settings() {
                 />
               </div>
 
+              <div className="form-group mb-3">
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  رمز التحقق من ويب هوك واتساب (WhatsApp Webhook Verify Token)
+                </label>
+                <input
+                  type="password"
+                  name="whatsapp_webhook_verify_token"
+                  className="form-input"
+                  value={formData.whatsapp_webhook_verify_token || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="أدخل رمز التحقق الخاص بواتساب"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                  يستخدم هذا الرمز للتحقق من طلبات الواتساب الواردة إلى النظام.
+                </span>
+              </div>
+
+              <div className="form-group mb-3">
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  اسم قالب رسالة تقييم الشحنة
+                </label>
+                <input
+                  type="text"
+                  name="shipment_review_template_name"
+                  className="form-input"
+                  value={formData.shipment_review_template_name || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="مثال: shipment_review"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+              </div>
+
+              <div className="form-group mb-3">
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  تأخير تقييم الشحنة (بالساعات)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  name="shipment_review_delay_hours"
+                  className="form-input"
+                  value={formData.shipment_review_delay_hours || 24}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="24"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+              </div>
+
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
                   رمز الوصول للواجهة البرمجية (WhatsApp Access Token)
@@ -248,26 +341,55 @@ export default function Settings() {
                 backdropFilter: 'blur(10px)',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
+                flexDirection: 'column',
+                gap: '1rem'
               }}
             >
               <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>الأتمتة التلقائية</h4>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>الأتمتة التلقائية عبر واتساب</h4>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '4px 0 0 0' }}>
-                  إرسال التذكيرات آلياً للعملاء بعد ترك السلة.
+                  إرسال التذكيرات آلياً للعملاء
                 </p>
               </div>
-              <div className="toggle-wrap" style={{ margin: 0 }}>
-                <input
-                  type="checkbox"
-                  id="automation_enabled"
-                  name="automation_enabled"
-                  className="toggle-input"
-                  checked={formData.automation_enabled}
-                  onChange={handleChange}
-                />
-                <label htmlFor="automation_enabled" className="toggle-label"></label>
+              <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل أتمتة تذكير السلة الفارغة</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                    إرسال التذكيرات عبر واتساب عند ترك السلة.
+                  </div>
+                </div>
+                <div className="toggle-wrap" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    id="automation_enabled"
+                    name="automation_enabled"
+                    className="toggle-input"
+                    checked={formData.automation_enabled}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="automation_enabled" className="toggle-label"></label>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>
+                    تفعيل أتمتة تقييم الشحنات
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                    إرسال طلب تقييم الشحنة آلياً بعد تأكيد التوصيل.
+                  </div>
+                </div>
+                <div className="toggle-wrap" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    id="shipment_review_enabled"
+                    name="shipment_review_enabled"
+                    className="toggle-input"
+                    checked={formData.shipment_review_enabled}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="shipment_review_enabled" className="toggle-label"></label>
+                </div>
               </div>
             </div>
 
@@ -402,6 +524,30 @@ export default function Settings() {
                   </div>
                   <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>abandoned.cart.purchased</span>
                 </div>
+
+                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="d-flex align-center gap-2">
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم إنشاء شحنة</span>
+                  </div>
+                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.created</span>
+                </div>
+
+                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <div className="d-flex align-center gap-2">
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم تحديث حالة الشحنة</span>
+                  </div>
+                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.updated</span>
+                </div>
+
+                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0' }}>
+                  <div className="d-flex align-center gap-2">
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم تسليم الشحنة</span>
+                  </div>
+                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.delivered</span>
+                </div>
               </div>
             </div>
 
@@ -490,23 +636,26 @@ export default function Settings() {
               </div>
 
               <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
                     <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>تفعيل موديول الإيميل</h4>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '4px 0 0 0' }}>
                       تفعيل أو تعطيل خواص الإيميل لهذا المتجر.
                     </p>
                   </div>
-                  <div className="toggle-wrap" style={{ margin: 0 }}>
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      name="is_active"
-                      className="toggle-input"
-                      checked={emailData.is_active}
-                      onChange={handleChange}
-                    />
-                    <label htmlFor="is_active" className="toggle-label"></label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>تفعيل الإيميل</span>
+                    <div className="toggle-wrap" style={{ margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        id="is_active"
+                        name="is_active"
+                        className="toggle-input"
+                        checked={emailData.is_active}
+                        onChange={handleChange}
+                      />
+                      <label htmlFor="is_active" className="toggle-label"></label>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -6,6 +6,7 @@ const cartSubItems = [
   { to: '/carts', icon: 'fa-cart-shopping', label: 'إدارة السلات', exact: true },
   { to: '/carts/recovered', icon: 'fa-bag-shopping', label: 'سلات تم شرائها' },
   { to: '/messages', icon: 'fa-comment-dots', label: 'رسائل الواتساب' },
+  { to: '/shipments', icon: 'fa-truck-fast', label: 'إشعارات التقييم' },
   { to: '/customers', icon: 'fa-users', label: 'العملاء' },
 ]
 

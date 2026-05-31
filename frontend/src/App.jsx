@@ -10,6 +10,7 @@ import Carts from './pages/Carts'
 import RecoveredCarts from './pages/RecoveredCarts'
 import Messages from './pages/Messages'
 import Customers from './pages/Customers'
+import ShipmentReviews from './pages/ShipmentReviews'
 import RegisteredCustomers from './pages/RegisteredCustomers'
 import Settings from './pages/Settings'
 import Stores from './pages/Stores'
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="carts" element={<Carts />} />
             <Route path="carts/recovered" element={<RecoveredCarts />} />
             <Route path="messages" element={<Messages />} />
+            <Route path="shipments" element={<ShipmentReviews />} />
             <Route path="customers" element={<Customers />} />
             <Route path="registered-customers" element={<RegisteredCustomers />} />
             <Route path="settings" element={<Settings />} />
