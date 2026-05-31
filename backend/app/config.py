@@ -16,7 +16,10 @@ class Settings(BaseSettings):
     accepted_events: Dict[str, str] = {
         "abandoned.cart.update": "recover_salla",
         "abandoned.cart": "recover_salla",
-        "abandoned.cart.purchased": "recover_salla"
+        "abandoned.cart.purchased": "recover_salla",
+        "shipment.created": "shipment_review",
+        "shipment.updated": "shipment_review",
+        "shipment.delivered": "shipment_review"
     }
 
     # default to no env_file here; we'll decide at runtime which file (if any) to load

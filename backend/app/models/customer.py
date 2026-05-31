@@ -20,4 +20,5 @@ class Customer(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     carts = relationship("AbandonedCart", back_populates="customer", cascade="all, delete-orphan")
+    shipment_reviews = relationship("ShipmentReview", back_populates="customer", cascade="all, delete-orphan")
 
