@@ -1,5 +1,7 @@
 import { useLocation, Link } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import styles from './Topbar.module.css'
 
 const PAGE_TITLES = {
   '/dashboard': { title: 'لوحة القيادة', subtitle: 'نظرة عامة على أداء متجرك' },
@@ -18,6 +20,23 @@ export default function Topbar({ onMenuToggle }) {
   const { pathname } = useLocation()
   const { title, subtitle } = PAGE_TITLES[pathname] || { title: 'Recover', subtitle: '' }
   const { stores, activeStore, switchStore } = useAuth()
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const getInitials = (name) => {
+    if (!name) return ''
+    return name.split(' ').map(n => n[0] || '').join('').slice(0, 2).toUpperCase()
+  }
 
   return (
     <header className="topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -41,53 +60,38 @@ export default function Topbar({ onMenuToggle }) {
           }}>
             المتجر الحالي:
           </span>
-          <div className="store-selector-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <i className="fa-solid fa-store" style={{
-              position: 'absolute',
-              right: '0.8rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '0.85rem',
-              color: 'var(--primary-color, #a855f7)',
-              pointerEvents: 'none'
-            }} />
-            <select
-              value={activeStore.id}
-              onChange={(e) => switchStore(e.target.value)}
-              className="store-select-dropdown"
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: '#fff',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                padding: '0.45rem 1rem 0.45rem 2.2rem',
-                fontSize: '0.9rem',
-                outline: 'none',
-                cursor: 'pointer',
-                fontFamily: 'Cairo, sans-serif',
-                minWidth: '180px',
-                textAlign: 'left',
-                direction: 'ltr',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                appearance: 'none'
-              }}
+          <div ref={wrapperRef} className="store-selector-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setOpen(o => !o)}
+              aria-haspopup="listbox"
+              aria-expanded={open}
+              className={styles.storeSelectorTrigger}
             >
-              {stores.map((store) => (
-                <option key={store.id} value={store.id} style={{ background: '#1c1c1e', color: '#fff' }}>
-                  {store.store_name}
-                </option>
-              ))}
-            </select>
-            <i className="fa-solid fa-chevron-down" style={{
-              position: 'absolute',
-              left: '0.8rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '0.75rem',
-              color: 'rgba(255, 255, 255, 0.4)',
-              pointerEvents: 'none'
-            }} />
+              <div className={styles.avatar}>{getInitials(activeStore.store_name)}</div>
+              <div className={styles.storeName}>{activeStore.store_name}</div>
+              <i className={`fa-solid fa-chevron-down ${styles.chevron}`} />
+            </button>
+
+            {open && (
+              <ul role="listbox" aria-label="stores" className={styles.dropdownList}>
+                {stores.map(store => (
+                  <li
+                    key={store.id}
+                    role="option"
+                    aria-selected={store.id === activeStore.id}
+                    onClick={() => { switchStore(store.id); setOpen(false) }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { switchStore(store.id); setOpen(false) } }}
+                    tabIndex={0}
+                    className={store.id === activeStore.id ? `${styles.dropdownItem} ${styles.active}` : styles.dropdownItem}
+                  >
+                    <div className={styles.dropdownAvatar}>{getInitials(store.store_name)}</div>
+                    <div className={styles.dropdownName}>{store.store_name}</div>
+                    {store.id === activeStore.id && <i className={`fa-solid fa-check ${styles.dropdownCheck}`} />}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

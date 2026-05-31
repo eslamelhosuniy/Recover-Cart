@@ -1,0 +1,110 @@
+:root{
+  --panel-bg: #0b0b0b;
+  --border: rgba(255,255,255,0.06);
+  --muted: rgba(255,255,255,0.5);
+}
+
+.storeSelectorTrigger{
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.35rem 0.6rem;
+  border-radius: 10px;
+  cursor: pointer;
+  min-width: 200px;
+  color: #fff;
+  font-family: Cairo, sans-serif;
+}
+
+.avatar{
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(59,130,246,0.06));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color, #a855f7);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.storeName{
+  flex: 1;
+  text-align: left;
+  direction: rtl;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron{
+  margin-left: 0.6rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.dropdownList{
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-width: 220px;
+  padding: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 50;
+  list-style: none;
+  animation: fadeSlideDown 180ms ease;
+  font-size: 0.8rem;
+}
+
+@keyframes fadeSlideDown{
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdownItem{
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.dropdownItem:hover{
+  background: rgba(255,255,255,0.02);
+}
+
+.dropdownAvatar{
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-weight: 700;
+}
+
+.dropdownName{
+  flex: 1;
+  text-align: left;
+  direction: rtl;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownCheck{
+  color: var(--primary-color, #a855f7);
+}
+
+.dropdownItem.active{
+  background: rgba(255,255,255,0.03);
+}
