@@ -11,7 +11,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.repositories.store_repository import StoreRepository
 
-router = APIRouter(prefix="/email-marketing", tags=["Email Marketing"])
+router = APIRouter(prefix="/api/v1/email-marketing", tags=["Email Marketing"])
 
 async def get_store_for_user(store_id: UUID, db: AsyncSession, current_user: User):
     store_repo = StoreRepository()
