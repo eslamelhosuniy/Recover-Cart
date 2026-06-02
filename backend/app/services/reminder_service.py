@@ -5,15 +5,10 @@ from datetime import datetime, timezone, timedelta
 import logging
 
 from app.repositories import CartRepository, MessageRepository, CustomerRepository, StoreRepository
-from app.repositories.shipment_repository import ShipmentRepository
-from app.repositories.shipment_message_repository import ShipmentMessageRepository
 from app.services.whatsapp_service import WhatsAppService
 from app.models.abandoned_cart import AbandonedCart
 from app.models.store import Store
-from app.models.shipment_review import ShipmentReview
-from app.models.shipment_message_log import ShipmentMessageLog
 from app.schemas import MessageCreate
-from app.schemas.shipment_schema import ShipmentMessageCreate
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -24,8 +19,6 @@ class ReminderService:
         self.message_repo = MessageRepository()
         self.customer_repo = CustomerRepository()
         self.store_repo = StoreRepository()
-        self.shipment_repo = ShipmentRepository()
-        self.shipment_message_repo = ShipmentMessageRepository()
         self.whatsapp_service = WhatsAppService()
 
     async def process_pending_reminders(self, db: AsyncSession) -> None:
@@ -60,126 +53,6 @@ class ReminderService:
                 except Exception as e:
                     logger.warning(f"Skipping cart {cart.id} in batch: {str(e)}")
 
-        await self.process_pending_shipment_reviews(db)
-
-    async def process_pending_shipment_reviews(self, db: AsyncSession) -> None:
-        logger.info("Starting scheduled shipment review processing...")
-
-        result = await db.execute(
-            select(ShipmentReview)
-            .join(Store, ShipmentReview.store_id == Store.id)
-            .where(
-                and_(
-                    ShipmentReview.review_sent == False,
-                    Store.shipment_review_enabled == True
-                )
-            )
-        )
-
-        pending_shipments = result.scalars().all()
-        logger.info(f"Found {len(pending_shipments)} shipments pending review check.")
-
-        for shipment in pending_shipments:
-            store_settings = await self.store_repo.get_by_id(db, shipment.store_id)
-            if not store_settings:
-                continue
-
-            trigger_at = shipment.delivered_at or shipment.shipped_at or shipment.created_at
-            if not trigger_at:
-                continue
-
-            threshold_time = datetime.now(timezone.utc) - timedelta(hours=store_settings.shipment_review_delay_hours)
-            if trigger_at <= threshold_time:
-                try:
-                    await self.send_shipment_review(db, shipment, store_settings)
-                except Exception as e:
-                    logger.warning(f"Skipping shipment {shipment.id} in batch: {str(e)}")
-
-    async def send_shipment_review(self, db: AsyncSession, shipment: ShipmentReview, store_settings: Store) -> None:
-        if shipment.review_sent:
-            raise ValueError("تم إرسال طلب المراجعة مسبقاً لهذه الشحنة.")
-
-        customer = await self.customer_repo.get_by_id(db, shipment.customer_id)
-        if not customer or not customer.mobile:
-            raise ValueError("لا يوجد رقم جوال صالح لعميل الشحنة.")
-
-        from sqlalchemy import select
-        from app.models.shipment_message_log import ShipmentMessageLog
-
-        limit_time = datetime.now(timezone.utc) - timedelta(hours=24)
-        stmt = (
-            select(ShipmentMessageLog)
-            .where(ShipmentMessageLog.shipment_id == shipment.id)
-            .where(ShipmentMessageLog.sent_at >= limit_time)
-            .where(ShipmentMessageLog.status.in_(["accepted", "sent"]))
-            .limit(1)
-        )
-        existing_log = (await db.execute(stmt)).scalars().first()
-        if existing_log:
-            logger.info(f"Skipping duplicate shipment review for shipment {shipment.id}.")
-            await self.shipment_repo.update(db, shipment, {"review_sent": True})
-            raise ValueError("تم إرسال رسالة لمراجعة الشحنة خلال آخر 24 ساعة.")
-
-        review_url = f"https://reiash.com/review/{shipment.order_id}" if shipment.order_id else "https://reiash.com/review"
-        customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
-
-        components = [
-            {
-                "type": "body",
-                "parameters": [
-                    {"type": "name", "parameter_name": "name", "text": customer_name},
-                    {"type": "text", "parameter_name": "order_id", "text": shipment.order_id or "طلبك"},
-                ],
-            },
-            {
-                "type": "button",
-                "sub_type": "url",
-                "index": "0",
-                "parameters": [
-                    {"type": "text", "text": review_url}
-                ],
-            },
-        ]
-
-        template_name = (
-            store_settings.shipment_review_template_name
-            or store_settings.whatsapp_template_name
-            or "shipment_review"
-        )
-        full_phone = f"{customer.mobile}"
-
-        try:
-            response = await self.whatsapp_service.send_template_message(
-                to_phone=full_phone,
-                template_name=template_name,
-                whatsapp_phone_id=store_settings.whatsapp_phone_id,
-                whatsapp_token=store_settings.whatsapp_access_token,
-                components=components,
-            )
-
-            msg_id = response.get("messages", [{}])[0].get("id")
-            msg_in = ShipmentMessageCreate(
-                shipment_id=shipment.id,
-                whatsapp_msg_id=msg_id,
-                status="accepted",
-                channel="whatsapp",
-            )
-            msg_data = msg_in.model_dump()
-            msg_data["store_id"] = shipment.store_id
-            await self.shipment_message_repo.create(db, msg_data)
-            await self.shipment_repo.update(db, shipment, {"review_sent": True})
-        except Exception as e:
-            msg_in = ShipmentMessageCreate(
-                shipment_id=shipment.id,
-                status="failed",
-                channel="whatsapp",
-            )
-            msg_data = msg_in.model_dump()
-            msg_data["store_id"] = shipment.store_id
-            created_msg = await self.shipment_message_repo.create(db, msg_data)
-            await self.shipment_message_repo.update(db, created_msg, {"error_message": str(e)})
-            logger.error(f"Failed to send shipment review for shipment {shipment.id}: {str(e)}")
-            raise
 
     async def send_reminder_for_cart(self, db: AsyncSession, cart: AbandonedCart, store_settings: Store = None) -> None:
         if cart.is_recovered:
@@ -286,7 +159,8 @@ class ReminderService:
                 cart_id=cart.id,
                 whatsapp_msg_id=msg_id,
                 status=message_status,
-                channel="whatsapp"
+                channel="whatsapp",
+                message_type="abandoned_reminder"
             )
             msg_data = msg_in.model_dump()
             msg_data["store_id"] = cart.store_id
@@ -297,7 +171,8 @@ class ReminderService:
             msg_in = MessageCreate(
                 cart_id=cart.id,
                 status="failed",
-                channel="whatsapp"
+                channel="whatsapp",
+                message_type="abandoned_reminder"
             )
             msg_data = msg_in.model_dump()
             msg_data["store_id"] = cart.store_id

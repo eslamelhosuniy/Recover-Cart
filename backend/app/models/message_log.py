@@ -14,6 +14,7 @@ class MessageLog(Base):
     whatsapp_msg_id = Column(String, nullable=True)
     status = Column(String, default="pending", nullable=False)
     channel = Column(String, default="whatsapp", nullable=False)
+    message_type = Column(String, default="abandoned_reminder", nullable=False)
     sent_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     error_message = Column(Text, nullable=True)

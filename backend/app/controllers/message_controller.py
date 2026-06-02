@@ -23,6 +23,7 @@ async def get_messages(
     limit: int = 10,
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    message_type: Optional[str] = Query(None, description="Filter by message type (abandoned_reminder, review_reminder)"),
     db: AsyncSession = Depends(get_db),
     active_store: Store = Depends(get_active_store),
 ):
@@ -38,6 +39,8 @@ async def get_messages(
         query = query.where(MessageLog.sent_at >= start_dt)
     if end_dt:
         query = query.where(MessageLog.sent_at <= end_dt)
+    if message_type:
+        query = query.where(MessageLog.message_type == message_type)
 
     result = await db.execute(
         query.order_by(MessageLog.sent_at.desc())
@@ -54,6 +57,8 @@ async def get_messages(
         count_query = count_query.where(MessageLog.sent_at >= start_dt)
     if end_dt:
         count_query = count_query.where(MessageLog.sent_at <= end_dt)
+    if message_type:
+        count_query = count_query.where(MessageLog.message_type == message_type)
 
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0

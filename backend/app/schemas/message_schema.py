@@ -7,6 +7,7 @@ from datetime import datetime
 class MessageBase(BaseModel):
     status: str = "pending"
     channel: str = "whatsapp"
+    message_type: str = "abandoned_reminder"
 
 
 class MessageCreate(MessageBase):
@@ -18,6 +19,7 @@ class MessageResponse(MessageBase):
     id: UUID
     cart_id: UUID
     whatsapp_msg_id: Optional[str] = None
+    message_type: str = "abandoned_reminder"
     sent_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     error_message: Optional[str] = None
