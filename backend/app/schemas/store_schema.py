@@ -15,9 +15,9 @@ class StoreBase(BaseModel):
     automation_enabled: bool = True
     reminder_delay_hours: int = 1
     max_retries: int = 3
-    shipment_review_enabled: bool = True
-    shipment_review_delay_hours: int = 24
-    shipment_review_template_name: str = "shipment_review"
+    review_request_enabled: bool = True
+    review_request_delay_hours: int = 24
+    review_request_template_name: str = "review_request"
     is_active: bool = True
 
 class StoreCreate(StoreBase):
@@ -35,9 +35,9 @@ class StoreUpdate(BaseModel):
     automation_enabled: Optional[bool] = None
     reminder_delay_hours: Optional[int] = None
     max_retries: Optional[int] = None
-    shipment_review_enabled: Optional[bool] = None
-    shipment_review_delay_hours: Optional[int] = None
-    shipment_review_template_name: Optional[str] = None
+    review_request_enabled: Optional[bool] = None
+    review_request_delay_hours: Optional[int] = None
+    review_request_template_name: Optional[str] = None
     is_active: Optional[bool] = None
 
 class StoreResponse(StoreBase):
