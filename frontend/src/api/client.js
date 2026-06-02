@@ -79,32 +79,13 @@ export const cartsApi = {
   remind: (id) => apiClient.post(`/carts/${id}/remind`),
 }
 
-// ── Shipments ────────────────────────────────────────────────
-export const shipmentsApi = {
-  list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
-    let url = `/shipments?skip=${skip}&limit=${limit}`
-    const params = []
-    if (startDate) params.push(`start_date=${startDate}`)
-    if (endDate) params.push(`end_date=${endDate}`)
-    if (params.length > 0) url += `&${params.join('&')}`
-    return apiClient.get(url)
-  },
-  stats: (startDate = '', endDate = '') => {
-    let url = '/shipments/stats'
-    const params = []
-    if (startDate) params.push(`start_date=${startDate}`)
-    if (endDate) params.push(`end_date=${endDate}`)
-    if (params.length > 0) url += `?${params.join('&')}`
-    return apiClient.get(url)
-  },
-}
-
 // ── Messages ──────────────────────────────────────────────
 export const messagesApi = {
-  list: (skip = 0, limit = 10, startDate = '', endDate = '') => {
+  list: (skip = 0, limit = 10, startDate = '', endDate = '', messageType = '') => {
     let url = `/messages?skip=${skip}&limit=${limit}`
     if (startDate) url += `&start_date=${startDate}`
     if (endDate) url += `&end_date=${endDate}`
+    if (messageType) url += `&message_type=${messageType}`
     return apiClient.get(url)
   },
   stats: (startDate = '', endDate = '') => {
@@ -182,6 +163,24 @@ export const emailMarketingApi = {
   createList: (storeId, data) => apiClient.post(`/email-marketing/lists/${storeId}`, data),
   getSuppressionGroups: (storeId) => apiClient.get(`/email-marketing/suppression-groups/${storeId}`),
   createSuppressionGroup: (storeId, data) => apiClient.post(`/email-marketing/suppression-groups/${storeId}`, data),
+}
+
+// ── Reviews ───────────────────────────────────────────────
+export const reviewsApi = {
+  list: (skip = 0, limit = 10, startDate, endDate) => {
+    let url = `/customer-reviews?skip=${skip}&limit=${limit}`
+    if (startDate) url += `&start_date=${startDate}`
+    if (endDate) url += `&end_date=${endDate}`
+    return apiClient.get(url)
+  },
+  getById: (id) => apiClient.get(`/customer-reviews/${id}`),
+  getByCustomerId: (customerId) => apiClient.get(`/customer-reviews/customer/${customerId}`),
+  stats: (startDate, endDate) => {
+    let url = '/customer-reviews/stats/overview'
+    if (startDate) url += `?start_date=${startDate}`
+    if (endDate) url += `${startDate ? '&' : '?'}end_date=${endDate}`
+    return apiClient.get(url)
+  },
 }
 
 export default apiClient

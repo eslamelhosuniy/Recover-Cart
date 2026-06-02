@@ -16,6 +16,11 @@ const STATUS_MAP = {
   failed: { label: 'فشلت', icon: 'fa-xmark', color: 'danger' },
 }
 
+const MESSAGE_TYPE_MAP = {
+  abandoned_reminder: { label: 'تذكير السلات المتروكة', color: '#8b5cf6' },
+  review_reminder: { label: 'تذكير التقييمات', color: '#3b82f6' },
+}
+
 export default function Messages() {
   const navigate = useNavigate()
   const { page, limit, skip, handlePageChange, resetPage } = usePagination(10)
@@ -25,12 +30,15 @@ export default function Messages() {
   const [selectedError, setSelectedError] = useState(null)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [messageType, setMessageType] = useState('')
 
   const fetchMessages = useCallback(async () => {
+    console.log('📤 Fetching messages:', { skip, limit, startDate, endDate, messageType })
     setLoading(true)
     try {
-      const res = await messagesApi.list(skip, limit, startDate, endDate)
+      const res = await messagesApi.list(skip, limit, startDate, endDate, messageType)
       const messagesData = res.data.data
+      console.log('📥 Received messages:', messagesData.length, messagesData)
 
       // Fetch cart details for these messages
       const cartIds = [...new Set(messagesData.map(m => m.cart_id))]
@@ -51,12 +59,13 @@ export default function Messages() {
 
       setData(enrichedMessages)
       setTotal(res.data.total)
+      console.log('✅ Total:', res.data.total)
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [skip, limit, startDate, endDate])
+  }, [skip, limit, startDate, endDate, messageType])
 
   useEffect(() => {
     fetchMessages()
@@ -64,7 +73,7 @@ export default function Messages() {
 
   useEffect(() => {
     resetPage()
-  }, [startDate, endDate, resetPage])
+  }, [startDate, endDate, messageType, resetPage])
 
   if (loading && data.length === 0) return <Spinner center />
 
@@ -78,14 +87,26 @@ export default function Messages() {
             <h2 className="card-title">سجل الرسائل</h2>
             <div className="text-muted text-small">إجمالي: {total}</div>
           </div>
-          <UnifiedFilter
-            startDate={startDate}
-            endDate={endDate}
-            onApply={(start, end) => {
-              setStartDate(start)
-              setEndDate(end)
-            }}
-          />
+          <div className="d-flex align-center gap-2">
+            <select
+              value={messageType}
+              onChange={(e) => setMessageType(e.target.value)}
+              className="form-input"
+              style={{ height: '36px', padding: '0 0.75rem', fontSize: '0.85rem', minWidth: '200px' }}
+            >
+              <option value="">جميع الرسائل</option>
+              <option value="abandoned_reminder">تذكير السلات المتروكة</option>
+              <option value="review_reminder">تذكير التقييمات</option>
+            </select>
+            <UnifiedFilter
+              startDate={startDate}
+              endDate={endDate}
+              onApply={(start, end) => {
+                setStartDate(start)
+                setEndDate(end)
+              }}
+            />
+          </div>
         </div>
 
         {data.length === 0 ? (
@@ -96,6 +117,7 @@ export default function Messages() {
               <table>
                 <thead>
                   <tr>
+                    <th>نوع الرسالة</th>
                     <th>رقم الواتساب</th>
                     <th>رقم السلة المرتبطة</th>
                     <th>العميل</th>
@@ -107,8 +129,25 @@ export default function Messages() {
                 <tbody>
                   {data.map((msg) => {
                     const s = STATUS_MAP[msg.status] || STATUS_MAP.pending
+                    const typeInfo = MESSAGE_TYPE_MAP[msg.message_type] || MESSAGE_TYPE_MAP.abandoned_reminder
                     return (
                       <tr key={msg.id}>
+                        <td>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              backgroundColor: `${typeInfo.color}20`,
+                              color: typeInfo.color,
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              border: `1px solid ${typeInfo.color}40`
+                            }}
+                          >
+                            {typeInfo.label}
+                          </span>
+                        </td>
                         <td dir="ltr" className="text-right fw-bold text-muted">
                           {msg.cart?.customer ? msg.cart.customer.mobile : '-'}
                         </td>

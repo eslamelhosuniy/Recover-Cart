@@ -17,11 +17,11 @@ export default function Settings() {
     whatsapp_access_token: '',
     whatsapp_webhook_verify_token: '',
     whatsapp_template_name: 'hello_world',
-    shipment_review_enabled: true,
-    shipment_review_delay_hours: 24,
-    shipment_review_template_name: 'shipment_review',
     automation_enabled: true,
     coupon_code: '',
+    review_request_enabled: true,
+    review_request_template_name: 'review_request',
+    review_request_delay_hours: 24,
   })
   
   const [emailData, setEmailData] = useState({
@@ -214,115 +214,214 @@ export default function Settings() {
                 borderRadius: '12px',
                 padding: '1.5rem',
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
               }}
             >
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#10b981', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#10b981', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <i className="fa-brands fa-whatsapp" />
                 إعدادات بوابة الواتساب الرسمية
               </h3>
 
-              <div className="form-group mb-3">
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  معرف رقم واتساب (Phone Number ID)
-                </label>
-                <input
-                  type="text"
-                  name="whatsapp_phone_id"
-                  className="form-input"
-                  value={formData.whatsapp_phone_id || ''}
-                  onChange={handleChange}
-                  required
-                  dir="ltr"
-                  placeholder="مثال: 104829392817293"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
+              {/* Sub-border 1: WhatsApp Credentials */}
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}
+              >
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#10b981', margin: 0 }}>بيانات الوصول</h4>
+
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    معرف رقم واتساب (Phone Number ID)
+                  </label>
+                  <input
+                    type="text"
+                    name="whatsapp_phone_id"
+                    className="form-input"
+                    value={formData.whatsapp_phone_id || ''}
+                    onChange={handleChange}
+                    required
+                    dir="ltr"
+                    placeholder="مثال: 104829392817293"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                </div>
+
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    رمز التحقق من ويبهوك الواتساب ( غير مُفعل حالياً )
+                  </label>
+                  <input
+                    type="password"
+                    name="whatsapp_webhook_verify_token"
+                    className="form-input"
+                    value={formData.whatsapp_webhook_verify_token || ''}
+                    onChange={handleChange}
+                    dir="ltr"
+                    placeholder="أدخل رمز التحقق الخاص بواتساب"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                  <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                    يستخدم هذا الرمز للتحقق من طلبات الواتساب الواردة إلى النظام.
+                  </span>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                   رمز الوصول لرقم الهاتف ( Generated WhatsApp Number Access Token )
+                  </label>
+                  <input
+                    type="password"
+                    name="whatsapp_access_token"
+                    className="form-input"
+                    value={formData.whatsapp_access_token || ''}
+                    onChange={handleChange}
+                    required
+                    dir="ltr"
+                    placeholder="EAAG..."
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                </div>
               </div>
 
-              <div className="form-group mb-3">
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  اسم قالب الرسالة المعتمد (Template Name)
-                </label>
-                <input
-                  type="text"
-                  name="whatsapp_template_name"
-                  className="form-input"
-                  value={formData.whatsapp_template_name || ''}
-                  onChange={handleChange}
-                  required
-                  dir="ltr"
-                  placeholder="مثال: abandoned_cart_reminder"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
+              {/* Sub-border 2: Cart Reminder Template */}
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}
+              >
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#10b981', margin: 0 }}>قالب تذكير السلة المتركة</h4>
+
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    اسم قالب الرسالة المعتمد (Template Name)
+                  </label>
+                  <input
+                    type="text"
+                    name="whatsapp_template_name"
+                    className="form-input"
+                    value={formData.whatsapp_template_name || ''}
+                    onChange={handleChange}
+                    required
+                    dir="ltr"
+                    placeholder="مثال: abandoned_cart_reminder"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل أتمتة تذكير السلة الفارغة</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                        إرسال التذكيرات عبر واتساب عند ترك السلة.
+                      </div>
+                    </div>
+                    <div className="toggle-wrap" style={{ margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        id="automation_enabled"
+                        name="automation_enabled"
+                        className="toggle-input"
+                        checked={formData.automation_enabled}
+                        onChange={handleChange}
+                      />
+                      <label htmlFor="automation_enabled" className="toggle-label"></label>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="form-group mb-3">
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  رمز التحقق من ويب هوك واتساب (WhatsApp Webhook Verify Token)
-                </label>
-                <input
-                  type="password"
-                  name="whatsapp_webhook_verify_token"
-                  className="form-input"
-                  value={formData.whatsapp_webhook_verify_token || ''}
-                  onChange={handleChange}
-                  dir="ltr"
-                  placeholder="أدخل رمز التحقق الخاص بواتساب"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
-                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
-                  يستخدم هذا الرمز للتحقق من طلبات الواتساب الواردة إلى النظام.
-                </span>
-              </div>
+              {/* Sub-border 3: Review Request Settings */}
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.15)',
+                  borderRadius: '8px',
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem'
+                }}
+              >
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#3b82f6', margin: 0 }}>إعدادات طلبات التقييمات</h4>
 
-              <div className="form-group mb-3">
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  اسم قالب رسالة تقييم الشحنة
-                </label>
-                <input
-                  type="text"
-                  name="shipment_review_template_name"
-                  className="form-input"
-                  value={formData.shipment_review_template_name || ''}
-                  onChange={handleChange}
-                  dir="ltr"
-                  placeholder="مثال: shipment_review"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
-              </div>
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    اسم قالب طلب التقييم (Review Template Name)
+                  </label>
+                  <input
+                    type="text"
+                    name="review_request_template_name"
+                    className="form-input"
+                    value={formData.review_request_template_name || ''}
+                    onChange={handleChange}
+                    dir="ltr"
+                    placeholder="مثال: review_request"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                  <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                    اسم قالب الواتساب المستخدم لإرسال طلبات التقييم.
+                  </span>
+                </div>
 
-              <div className="form-group mb-3">
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  تأخير تقييم الشحنة (بالساعات)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  name="shipment_review_delay_hours"
-                  className="form-input"
-                  value={formData.shipment_review_delay_hours || 24}
-                  onChange={handleChange}
-                  dir="ltr"
-                  placeholder="24"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
-              </div>
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    تأخير الإرسال (ساعات) (Delay Hours)
+                  </label>
+                  <input
+                    type="number"
+                    name="review_request_delay_hours"
+                    className="form-input"
+                    value={formData.review_request_delay_hours || ''}
+                    onChange={handleChange}
+                    min={1}
+                    required
+                    dir="ltr"
+                    placeholder="مثال: 24"
+                    style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                  />
+                  <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                    عدد الساعات المراد الانتظار قبل إرسال طلب التقييم بعد استرجاع السلة.
+                  </span>
+                </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  رمز الوصول للواجهة البرمجية (WhatsApp Access Token)
-                </label>
-                <input
-                  type="password"
-                  name="whatsapp_access_token"
-                  className="form-input"
-                  value={formData.whatsapp_access_token || ''}
-                  onChange={handleChange}
-                  required
-                  dir="ltr"
-                  placeholder="EAAG..."
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل طلبات التقييمات</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                        إرسال طلبات التقييم للعملاء بعد استرجاع السلة.
+                      </div>
+                    </div>
+                    <div className="toggle-wrap" style={{ margin: 0 }}>
+                      <input
+                        type="checkbox"
+                        id="review_request_enabled"
+                        name="review_request_enabled"
+                        className="toggle-input"
+                        checked={formData.review_request_enabled}
+                        onChange={handleChange}
+                      />
+                      <label htmlFor="review_request_enabled" className="toggle-label"></label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -330,68 +429,6 @@ export default function Settings() {
 
           {/* Column 2: Webhooks & Operational Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-            {/* Automation Trigger Card */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, rgba(22, 25, 37, 0.7) 0%, rgba(15, 17, 26, 0.8) 100%)',
-                border: '1px solid var(--border)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
-              }}
-            >
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>الأتمتة التلقائية عبر واتساب</h4>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '4px 0 0 0' }}>
-                  إرسال التذكيرات آلياً للعملاء
-                </p>
-              </div>
-              <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل أتمتة تذكير السلة الفارغة</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
-                    إرسال التذكيرات عبر واتساب عند ترك السلة.
-                  </div>
-                </div>
-                <div className="toggle-wrap" style={{ margin: 0 }}>
-                  <input
-                    type="checkbox"
-                    id="automation_enabled"
-                    name="automation_enabled"
-                    className="toggle-input"
-                    checked={formData.automation_enabled}
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="automation_enabled" className="toggle-label"></label>
-                </div>
-              </div>
-              <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>
-                    تفعيل أتمتة تقييم الشحنات
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
-                    إرسال طلب تقييم الشحنة آلياً بعد تأكيد التوصيل.
-                  </div>
-                </div>
-                <div className="toggle-wrap" style={{ margin: 0 }}>
-                  <input
-                    type="checkbox"
-                    id="shipment_review_enabled"
-                    name="shipment_review_enabled"
-                    className="toggle-input"
-                    checked={formData.shipment_review_enabled}
-                    onChange={handleChange}
-                  />
-                  <label htmlFor="shipment_review_enabled" className="toggle-label"></label>
-                </div>
-              </div>
-            </div>
 
             {/* Webhook URLs Integration Card */}
             <div
@@ -525,29 +562,6 @@ export default function Settings() {
                   <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>abandoned.cart.purchased</span>
                 </div>
 
-                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div className="d-flex align-center gap-2">
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم إنشاء شحنة</span>
-                  </div>
-                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.created</span>
-                </div>
-
-                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <div className="d-flex align-center gap-2">
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم تحديث حالة الشحنة</span>
-                  </div>
-                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.updated</span>
-                </div>
-
-                <div className="d-flex align-center justify-between" style={{ padding: '0.5rem 0' }}>
-                  <div className="d-flex align-center gap-2">
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 6px #10b981' }}></span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>تم تسليم الشحنة</span>
-                  </div>
-                  <span className="badge badge-muted" dir="ltr" style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>shipment.delivered</span>
-                </div>
               </div>
             </div>
 

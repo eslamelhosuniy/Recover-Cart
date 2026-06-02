@@ -16,8 +16,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [nextRun, setNextRun] = useState(null)
+  const [nextReviewRun, setNextReviewRun] = useState(null)
   const [timeLeft, setTimeLeft] = useState('')
+  const [reviewTimeLeft, setReviewTimeLeft] = useState('')
   const [timerParts, setTimerParts] = useState({ hours: '00', minutes: '00', seconds: '00' })
+  const [reviewTimerParts, setReviewTimerParts] = useState({ hours: '00', minutes: '00', seconds: '00' })
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
@@ -26,6 +29,9 @@ export default function Dashboard() {
       .then(res => {
         if (res.data?.next_run_time) {
           setNextRun(new Date(res.data.next_run_time))
+        }
+        if (res.data?.next_review_run_time) {
+          setNextReviewRun(new Date(res.data.next_review_run_time))
         }
       })
       .catch(err => console.error(err))
@@ -59,32 +65,54 @@ export default function Dashboard() {
   }, [fetchData, fetchNextJob, activeStore, authLoading])
 
   useEffect(() => {
-    if (!nextRun) return
+    if (!nextRun && !nextReviewRun) return
 
     const updateTimer = () => {
-      const diff = nextRun.getTime() - new Date().getTime()
-      if (diff <= 0) {
-        setTimeLeft('قيد التشغيل...')
-        setTimerParts({ hours: '00', minutes: '00', seconds: '00' })
-        return
+      // Update reminder timer
+      if (nextRun) {
+        const diff = nextRun.getTime() - new Date().getTime()
+        if (diff <= 0) {
+          setTimeLeft('قيد التشغيل...')
+          setTimerParts({ hours: '00', minutes: '00', seconds: '00' })
+        } else {
+          const hours = Math.floor(diff / (1000 * 60 * 60))
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+          const hoursStr = String(hours).padStart(2, '0')
+          const minutesStr = String(minutes).padStart(2, '0')
+          const secondsStr = String(seconds).padStart(2, '0')
+
+          setTimeLeft('active')
+          setTimerParts({ hours: hoursStr, minutes: minutesStr, seconds: secondsStr })
+        }
       }
 
-      const hours = Math.floor(diff / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      // Update review timer
+      if (nextReviewRun) {
+        const diff = nextReviewRun.getTime() - new Date().getTime()
+        if (diff <= 0) {
+          setReviewTimeLeft('قيد التشغيل...')
+          setReviewTimerParts({ hours: '00', minutes: '00', seconds: '00' })
+        } else {
+          const hours = Math.floor(diff / (1000 * 60 * 60))
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000)
 
-      const hoursStr = String(hours).padStart(2, '0')
-      const minutesStr = String(minutes).padStart(2, '0')
-      const secondsStr = String(seconds).padStart(2, '0')
+          const hoursStr = String(hours).padStart(2, '0')
+          const minutesStr = String(minutes).padStart(2, '0')
+          const secondsStr = String(seconds).padStart(2, '0')
 
-      setTimeLeft('active')
-      setTimerParts({ hours: hoursStr, minutes: minutesStr, seconds: secondsStr })
+          setReviewTimeLeft('active')
+          setReviewTimerParts({ hours: hoursStr, minutes: minutesStr, seconds: secondsStr })
+        }
+      }
     }
 
     updateTimer()
     const timerInterval = setInterval(updateTimer, 1000)
     return () => clearInterval(timerInterval)
-  }, [nextRun])
+  }, [nextRun, nextReviewRun])
 
   if ((loading && !kpis) || (authLoading && !activeStore)) {
     return <Spinner center />
@@ -116,74 +144,163 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Automated Job Timer Banner */}
-      {nextRun && (
+      {/* Automated Jobs Status Banner */}
+      {(nextRun || nextReviewRun) && (
         <div
-          className="mb-3 d-flex justify-between align-center p-2 px-3 fade-in"
           style={{
-            background: 'linear-gradient(135deg, var(--bg-card, #1e1e2e) 0%, rgba(20, 20, 35, 0.95) 100%)',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            borderRadius: '10px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '0.75rem',
+            marginBottom: '1.25rem'
           }}
         >
-          <div className="d-flex align-center gap-2">
+          {/* Reminder Job Banner */}
+          {nextRun && (
             <div
               style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(139, 92, 246, 0.12)',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(88, 28, 135, 0.06) 100%)',
+                border: '1px solid rgba(139, 92, 246, 0.25)',
+                borderRadius: '10px',
+                padding: '0.9rem',
+                boxShadow: '0 2px 8px rgba(139, 92, 246, 0.06)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
+                justifyContent: 'space-between',
+                animation: 'fadeIn 0.3s ease-out'
               }}
             >
-              <i className="fa-solid fa-bolt fa-bounce text-accent" style={{ fontSize: '1rem' }} />
-            </div>
-            <div>
-              <div style={{ fontWeight: '700', fontSize: '.85rem', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                مساعد استرجاع السلات الذكي
-                <span
+              <div className="d-flex align-center gap-2" style={{ minWidth: 0 }}>
+                <div
                   style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10b981',
-                    boxShadow: '0 0 6px #10b981',
-                    display: 'inline-block',
-                    animation: 'pulse 1.5s infinite'
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    flexShrink: 0
                   }}
-                />
+                >
+                  <i className="fa-solid fa-bolt fa-bounce text-accent" style={{ fontSize: '0.95rem' }} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    السلة الفارغة
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#10b981',
+                        boxShadow: '0 0 6px #10b981',
+                        display: 'inline-block',
+                        animation: 'pulse 1.5s infinite',
+                        flexShrink: 0
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#a0a0b8' }}>يُرسل تذكيرات السلة الفارغة</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '0.95rem',
+                  fontWeight: '800',
+                  color: timeLeft === 'قيد التشغيل...' ? '#10b981' : '#8b5cf6',
+                  backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                  padding: '0.35rem 0.7rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  direction: 'ltr',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                {timeLeft === 'active' ? `${timerParts.hours}:${timerParts.minutes}:${timerParts.seconds}` : timeLeft}
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="d-flex align-center gap-2">
-            <span style={{ fontSize: '.75rem', fontWeight: '700', color: '#a0a0b8' }}>التشغيل القادم:</span>
+          {/* Review Request Job Banner */}
+          {nextReviewRun && (
             <div
               style={{
-                fontFamily: 'monospace',
-                fontSize: '1rem',
-                fontWeight: '800',
-                color: timeLeft === 'قيد التشغيل...' ? '#10b981' : 'var(--accent)',
-                backgroundColor: 'rgba(15, 15, 25, 0.6)',
-                padding: '.25rem .6rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(139, 92, 246, 0.15)',
-                direction: 'ltr',
-                minWidth: '80px',
-                textAlign: 'center'
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.06) 100%)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                borderRadius: '10px',
+                padding: '0.9rem',
+                boxShadow: '0 2px 8px rgba(59, 130, 246, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                animation: 'fadeIn 0.3s ease-out'
               }}
             >
-              {timeLeft === 'active' ? `${timerParts.hours}:${timerParts.minutes}:${timerParts.seconds}` : timeLeft}
+              <div className="d-flex align-center gap-2" style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    flexShrink: 0
+                  }}
+                >
+                  <i className="fa-solid fa-star fa-bounce" style={{ fontSize: '0.95rem', color: '#3b82f6' }} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    طلبات التقييم
+                    <span
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        backgroundColor: '#3b82f6',
+                        boxShadow: '0 0 6px #3b82f6',
+                        display: 'inline-block',
+                        animation: 'pulse 1.5s infinite',
+                        flexShrink: 0
+                      }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#a0a0b8' }}>يُرسل طلبات التقييم تلقائياً للعملاء</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: '0.95rem',
+                  fontWeight: '800',
+                  color: reviewTimeLeft === 'قيد التشغيل...' ? '#10b981' : '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  padding: '0.35rem 0.7rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  direction: 'ltr',
+                  minWidth: '80px',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+              >
+                {reviewTimeLeft === 'active' ? `${reviewTimerParts.hours}:${reviewTimerParts.minutes}:${reviewTimerParts.seconds}` : reviewTimeLeft}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
-
-
 
       {/* KPIs */}
       {kpis && (
@@ -216,34 +333,7 @@ export default function Dashboard() {
             iconColor="#ef4444"
             sub="لم يتم شرائها بعد"
           />
-          <KPICard
-            label="إجمالي الشحنات"
-            value={kpis.total_shipments}
-            icon="fa-box-open"
-            iconColor="#8b5cf6"
-            sub="تم استلام إشعارات الشحن"
-          />
-          {/* <KPICard
-            label="طلبات المراجعة المرسلة"
-            value={kpis.review_requests_sent}
-            icon="fa-paper-plane-top"
-            iconColor="#10b981"
-            sub="رسائل طلب المراجعة"
-          /> */}
-          <KPICard
-            label="رسائل مراجعة تم تسليمها / رسائل مراجعة معلقة"
-            value={`${kpis.delivered_shipments} / ${kpis.pending_review_shipments}`}
-            icon="fa-truck-fast"
-            iconColor="#38bdf8"
-            sub="تم تسليمها / لم تُرسل بعد"
-          />
-          {/* <KPICard
-            label="رسائل مراجعة فاشلة"
-            value={kpis.failed_review_messages}
-            icon="fa-circle-exclamation"
-            iconColor="#ef4444"
-            sub="فشل إرسالها أو تسليمها"
-          /> */}
+          {/* Shipment related KPIs are removed after deprecating the old shipment review workflow. */}
           <KPICard
             label="عملاء استلموا تذكير"
             value={kpis.received_messages_customers}
