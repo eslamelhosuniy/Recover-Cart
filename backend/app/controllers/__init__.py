@@ -1,9 +1,9 @@
 from .cart_controller import router as cart_router
 from .customer_controller import router as customer_router
 from .dashboard_controller import router as dashboard_router
-from .shipment_controller import router as shipment_router
 from .logs_controller import router as logs_router
 from .message_controller import router as message_router
+from .review_controller import router as review_router
 from .store_controller import router as store_router
 from .webhook_controller import router as webhook_router
 from .auth_controller import router as auth_router
@@ -16,9 +16,9 @@ routers = [
     webhook_router,
     whatsapp_webhook_router,
     dashboard_router,
-    shipment_router,
     customer_router,
     cart_router,
+    review_router,
     message_router,
     store_router,
     logs_router,

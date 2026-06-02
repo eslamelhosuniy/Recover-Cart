@@ -9,6 +9,5 @@ from app.models.email_setting import EmailSetting
 from app.models.email_contact import EmailContact
 from app.models.email_campaign import EmailCampaign
 from app.models.email_tracking import EmailTrackingLog
-from app.models.shipment_review import ShipmentReview
-from app.models.shipment_message_log import ShipmentMessageLog
+from app.models.customer_review import CustomerReview
 

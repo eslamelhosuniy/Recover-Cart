@@ -28,8 +28,18 @@ async def get_next_job(
     current_user: User = Depends(get_current_user),
 ):
     from app.jobs.scheduler import scheduler
-    job = scheduler.get_job("hourly_reminder_job")
-    if job and job.next_run_time:
-        return {"next_run_time": job.next_run_time.isoformat()}
-    return {"next_run_time": None}
+    
+    response = {"next_run_time": None, "next_review_run_time": None}
+    
+    # Get reminder job next run time
+    reminder_job = scheduler.get_job("hourly_reminder_job")
+    if reminder_job and reminder_job.next_run_time:
+        response["next_run_time"] = reminder_job.next_run_time.isoformat()
+    
+    # Get review request job next run time
+    review_job = scheduler.get_job("review_request_job")
+    if review_job and review_job.next_run_time:
+        response["next_review_run_time"] = review_job.next_run_time.isoformat()
+    
+    return response
 

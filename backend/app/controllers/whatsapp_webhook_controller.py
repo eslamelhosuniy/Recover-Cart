@@ -23,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.core.dependencies import get_db
 from app.models.message_log import MessageLog
-from app.models.shipment_message_log import ShipmentMessageLog
 from app.models.store import Store
 import logging
 
@@ -114,14 +113,6 @@ async def whatsapp_webhook_receive(
                         message.status = mapped_status
                         db.add(message)
                         continue
-
-                    result = await db.execute(
-                        select(ShipmentMessageLog).where(ShipmentMessageLog.whatsapp_msg_id == msg_id)
-                    )
-                    shipment_message = result.scalars().first()
-                    if shipment_message:
-                        shipment_message.status = mapped_status
-                        db.add(shipment_message)
 
         await db.commit()
     except Exception as e:

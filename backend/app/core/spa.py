@@ -17,7 +17,8 @@ class SPAStaticFiles(StaticFiles):
     def lookup_path(self, path: str):
         full_path, stat_result = super().lookup_path(path)
         # If file not found and it's not an API route, serve index.html
-        if stat_result is None and not path.startswith("api/"):
+        normalized_path = path.lstrip('/')
+        if stat_result is None and not normalized_path.startswith("api/"):
             index_path = os.path.join(self.directory, "index.html")
             if os.path.exists(index_path):
                 return index_path, os.stat(index_path)

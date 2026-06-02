@@ -19,4 +19,5 @@ class RecoveredCart(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # Relationship to parent AbandonedCart (backref is defined in AbandonedCart)
+    review = relationship("CustomerReview", back_populates="recovered_cart", uselist=False, cascade="all, delete-orphan")
 

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from sqlalchemy.future import select
 from app.models.abandoned_cart import AbandonedCart
 from app.models.recovered_cart import RecoveredCart
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,9 @@ class CartService:
     def __init__(self):
         self.cart_repo = CartRepository()
         self.customer_repo = CustomerRepository()
+        # Import here to avoid circular imports
+        from app.services.review_service import ReviewService
+        self.review_service = ReviewService()
 
     async def process_abandoned_cart(self, db: AsyncSession, payload: dict, store_id: str) -> None:
         try:
@@ -55,6 +59,18 @@ class CartService:
                         )
                         db.add(recovered)
                         await db.commit()
+                        
+                        # Schedule review request for this recovered cart
+                        try:
+                            await self.review_service.schedule_review_request(
+                                db=db,
+                                store_id=UUID(store_id),
+                                customer_id=cart.customer_id,
+                                recovered_cart_id=recovered.id,
+                            )
+                        except Exception as e:
+                            logger.error(f"Error scheduling review request: {str(e)}")
+                        
                         logger.info(f"Successfully processed purchased cart: {salla_cart_id}")
                     else:
                         logger.info(f"Cart {salla_cart_id} already marked as recovered.")

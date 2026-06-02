@@ -7,7 +7,7 @@ import hashlib
 import json
 from app.core.dependencies import get_db
 from app.services.cart_service import CartService
-from app.services.shipment_service import ShipmentService
+from app.services.review_service import ReviewService
 from app.models.store import Store
 import logging
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/webhooks", tags=["Webhooks"])
 cart_service = CartService()
-shipment_service = ShipmentService()
+review_service = ReviewService()
 
 @router.post("/salla")
 async def salla_webhook(
@@ -45,8 +45,8 @@ async def salla_webhook(
     action = settings.accepted_events[event_name]
     if action == "recover_salla":
         await cart_service.process_abandoned_cart(db, payload, str(store.id))
-    elif action == "shipment_review":
-        await shipment_service.process_shipment_event(db, payload, str(store.id))
+    elif action == "review_webhook":
+        await review_service.process_review_webhook(db, payload, str(store.id))
     else:
         logger.info(f"Ignoring webhook event '{event_name}' because action '{action}' is not handled.")
         return {"status": "success", "message": f"Event '{event_name}' ignored"}

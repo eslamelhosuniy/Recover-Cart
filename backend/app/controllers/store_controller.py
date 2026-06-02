@@ -64,9 +64,6 @@ async def create_store(
         automation_enabled=payload.automation_enabled,
         reminder_delay_hours=payload.reminder_delay_hours,
         max_retries=payload.max_retries,
-        shipment_review_enabled=payload.shipment_review_enabled,
-        shipment_review_delay_hours=payload.shipment_review_delay_hours,
-        shipment_review_template_name=payload.shipment_review_template_name,
         is_active=payload.is_active
     )
     
