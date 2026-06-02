@@ -8,7 +8,6 @@ const PAGE_TITLES = {
   '/carts':     { title: 'السلات المهجورة', subtitle: 'تتبع وإدارة السلات غير المكتملة' },
   '/carts/recovered': { title: 'سلات تم شرائها', subtitle: 'تفاصيل السلات المسترجعة بنجاح' },
   '/messages':  { title: 'رسائل واتساب', subtitle: 'سجل الرسائل المرسلة' },
-  '/shipments': { title: 'شحنات ومراجعات', subtitle: 'عرض الشحنات وطلبات مراجعة العملاء' },
   '/customers': { title: 'العملاء', subtitle: 'قائمة عملائك المسجلين' },
   '/settings':  { title: 'الإعدادات', subtitle: 'إعدادات المتجر والنظام' },
   '/stores':    { title: 'المتاجر', subtitle: 'إدارة متاجر السلات واسترجاعها' },
