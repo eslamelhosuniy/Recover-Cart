@@ -13,6 +13,7 @@ const PAGE_TITLES = {
   '/stores':    { title: 'المتاجر', subtitle: 'إدارة متاجر السلات واسترجاعها' },
   '/admin-stores': { title: 'متاجر المنصة', subtitle: 'إدارة متاجر المنصة بالكامل' },
   '/registered-customers': { title: 'المستخدمين والمدراء', subtitle: 'إدارة مستخدمي ومسؤولي النظام' },
+  '/documentation': { title: 'مركز التوثيق', subtitle: 'شروحات شاملة وخطوة بخطوة' },
 }
 
 export default function Topbar({ onMenuToggle }) {

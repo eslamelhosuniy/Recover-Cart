@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { NotificationProvider } from './contexts/NotificationContext'
+import { LanguageProvider } from './contexts/LanguageContext'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 
@@ -17,42 +18,50 @@ import Stores from './pages/Stores'
 import AdminStores from './pages/AdminStores'
 import EmailContacts from './pages/EmailContacts'
 import EmailCampaigns from './pages/EmailCampaigns'
+import DocumentationHome from './pages/DocumentationHome'
+import DocumentationSection from './pages/DocumentationSection'
 
 export default function App() {
   return (
     <NotificationProvider>
       <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/signin" element={<SignIn />} />
+        <LanguageProvider>
+          <Router>
+            <Routes>
+              <Route path="/signin" element={<SignIn />} />
 
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="stores" element={<Stores />} />
-            <Route path="admin-stores" element={<AdminStores />} />
-            <Route path="carts" element={<Carts />} />
-            <Route path="carts/recovered" element={<RecoveredCarts />} />
-            <Route path="messages" element={<Messages />} />
-            <Route path="reviews" element={<Reviews />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="registered-customers" element={<RegisteredCustomers />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="email/contacts" element={<EmailContacts />} />
-            <Route path="email/campaigns" element={<EmailCampaigns />} />
-          </Route>
+              {/* Documentation Routes */}
+              <Route path="/documentation" element={<DocumentationHome />} />
+              <Route path="/documentation/:sectionId" element={<DocumentationSection />} />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="stores" element={<Stores />} />
+                <Route path="admin-stores" element={<AdminStores />} />
+                <Route path="carts" element={<Carts />} />
+                <Route path="carts/recovered" element={<RecoveredCarts />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="reviews" element={<Reviews />} />
+                <Route path="customers" element={<Customers />} />
+                <Route path="registered-customers" element={<RegisteredCustomers />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="email/contacts" element={<EmailContacts />} />
+                <Route path="email/campaigns" element={<EmailCampaigns />} />
+              </Route>
+
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </Router>
+        </LanguageProvider>
       </AuthProvider>
     </NotificationProvider>
   )

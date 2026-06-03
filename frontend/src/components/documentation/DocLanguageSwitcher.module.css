@@ -1,0 +1,46 @@
+.switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--card-bg-solid);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+
+.switcher:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.flag {
+  font-size: 1.2rem;
+}
+
+.text {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .switcher {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .flag {
+    font-size: 1rem;
+  }
+
+  .text {
+    display: none;
+  }
+}

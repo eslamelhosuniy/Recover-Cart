@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { settingsApi, emailMarketingApi } from '../api/client'
 import Spinner from '../components/ui/Spinner'
 import { useNotification } from '../contexts/NotificationContext'
@@ -237,12 +238,40 @@ export default function Settings() {
     <div className="animate-in" style={{ maxWidth: '1100px', margin: '0 auto' }}>
       {/* Page Header */}
       <div className="mb-4">
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.25rem' }}>
-          إعدادات النظام والربط
-        </h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-          قم بتهيئة حساب Meta Developer وسلة للبدء بأتمتة تذكيرات السلات المتروكة.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.25rem' }}>
+              إعدادات النظام والربط
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+              قم بتهيئة حساب Meta Developer وسلة للبدء بأتمتة تذكيرات السلات المتروكة.
+            </p>
+          </div>
+          <Link
+            to="/documentation"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.25rem',
+              background: 'var(--accent)',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'
+            }
+            onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'
+            }
+          >
+            <i className="fa-solid fa-book" />
+            التوثيق
+          </Link>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
