@@ -61,6 +61,7 @@ async def create_store(
         whatsapp_webhook_verify_token=payload.whatsapp_webhook_verify_token,
         whatsapp_template_name=payload.whatsapp_template_name,
         coupon_code=payload.coupon_code,
+        reminder_image_url=payload.reminder_image_url,
         automation_enabled=payload.automation_enabled,
         reminder_delay_hours=payload.reminder_delay_hours,
         max_retries=payload.max_retries,

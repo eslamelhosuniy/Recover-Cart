@@ -97,7 +97,6 @@ class ReminderService:
         try:
             customer_name = customer.full_name.split()[0] if customer.full_name else "عميلنا العزيز"
             checkout_url = cart.checkout_url or "https://reiash.com/cart"
-            coupon = store_settings.coupon_code or "رياشن للمفروشات"
 
             # Extract only the path/suffix of the URL using split('/')
             if "://" in checkout_url:
@@ -105,45 +104,56 @@ class ReminderService:
             else:
                 checkout_button_param = checkout_url
 
-            components = [
-                {
+            components = []
+            
+            # Add header with image only if reminder_image_url is set
+            if store_settings.reminder_image_url:
+                components.append({
                     "type": "header",
                     "parameters": [
                         {
                             "type": "image",
                             "image": {
-                                "link": "https://c.top4top.io/p_3790bqs1o1.jpg"
+                                "link": store_settings.reminder_image_url
                             }
                         }
                     ]
-                },
+                })
+            
+            # Build body parameters dynamically
+            body_parameters = [
                 {
-                    "type": "body",
-                    "parameters": [
-                        {
-                            "type": "name",
-                            "parameter_name": "name",
-                            "text": customer_name
-                        },
-                        {
-                            "type": "text",
-                            "parameter_name": "cupon",
-                            "text": coupon
-                        }
-                    ]
-                },
-                {
-                    "type": "button",
-                    "sub_type": "url",
-                    "index": "0",
-                    "parameters": [
-                        {
-                            "type": "text",
-                            "text": checkout_button_param
-                        }
-                    ]
+                    "type": "name",
+                    "parameter_name": "name",
+                    "text": customer_name
                 }
             ]
+            
+            # Add coupon only if coupon_code is set
+            if store_settings.coupon_code:
+                body_parameters.append({
+                    "type": "text",
+                    "parameter_name": "cupon",
+                    "text": store_settings.coupon_code
+                })
+            
+            components.append({
+                "type": "body",
+                "parameters": body_parameters
+            })
+            
+            # Add button component
+            components.append({
+                "type": "button",
+                "sub_type": "url",
+                "index": "0",
+                "parameters": [
+                    {
+                        "type": "text",
+                        "text": checkout_button_param
+                    }
+                ]
+            })
 
             response = await self.whatsapp_service.send_template_message(
                 to_phone=full_phone,

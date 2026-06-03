@@ -25,6 +25,7 @@ class Store(Base):
     review_request_enabled = Column(Boolean, default=True, nullable=False)
     review_request_delay_hours = Column(Integer, default=24, nullable=False)
     review_request_template_name = Column(String, nullable=False, default="review_request")
+    reminder_image_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(

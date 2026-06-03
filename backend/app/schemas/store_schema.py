@@ -12,6 +12,7 @@ class StoreBase(BaseModel):
     whatsapp_webhook_verify_token: Optional[str] = None
     whatsapp_template_name: str = "hello_world"
     coupon_code: Optional[str] = None
+    reminder_image_url: Optional[str] = None
     automation_enabled: bool = True
     reminder_delay_hours: int = 1
     max_retries: int = 3
@@ -32,6 +33,7 @@ class StoreUpdate(BaseModel):
     whatsapp_webhook_verify_token: Optional[str] = None
     whatsapp_template_name: Optional[str] = None
     coupon_code: Optional[str] = None
+    reminder_image_url: Optional[str] = None
     automation_enabled: Optional[bool] = None
     reminder_delay_hours: Optional[int] = None
     max_retries: Optional[int] = None

@@ -22,6 +22,7 @@ export default function Settings() {
     review_request_enabled: true,
     review_request_template_name: 'review_request',
     review_request_delay_hours: 24,
+    reminder_image_url: '',
   })
   
   const [emailData, setEmailData] = useState({
@@ -34,6 +35,9 @@ export default function Settings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isNew, setIsNew] = useState(true)
+  const [imageVerifying, setImageVerifying] = useState(false)
+  const [imageVerified, setImageVerified] = useState(false)
+  const [imagePreview, setImagePreview] = useState('')
   const { showNotification } = useNotification()
 
 
@@ -48,7 +52,15 @@ export default function Settings() {
       emailMarketingApi.getSettings(activeStoreId)
     ]).then(([settingsRes, emailRes]) => {
       if (settingsRes.status === 'fulfilled' && settingsRes.value?.data && typeof settingsRes.value.data === 'object') {
-        setFormData(prev => ({ ...prev, ...settingsRes.value.data }))
+        const data = settingsRes.value.data
+        setFormData(prev => ({ ...prev, ...data }))
+        
+        // Auto-verify image if it exists in the database
+        if (data.reminder_image_url) {
+          setImageVerified(true)
+          setImagePreview(data.reminder_image_url)
+        }
+        
         setIsNew(false)
       } else if (settingsRes.status === 'rejected' && settingsRes.reason.response?.status === 404) {
         setIsNew(true)
@@ -92,6 +104,13 @@ export default function Settings() {
       return
     }
 
+    // Validation: if automation is enabled and image URL has text but is not verified
+    if (formData.automation_enabled && formData.reminder_image_url?.trim() && !imageVerified) {
+      showNotification('يجب التحقق من صورة التذكير قبل الحفظ. انقر على زر "تحقق" أولاً.', 'error')
+      setSaving(false)
+      return
+    }
+
     setSaving(true)
     try {
       if (isNew) {
@@ -128,6 +147,87 @@ export default function Settings() {
       showNotification(message, 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleVerifyImage = async () => {
+    const imageUrl = formData.reminder_image_url?.trim()
+    
+    if (!imageUrl) {
+      showNotification('الرجاء إدخال رابط الصورة أولاً', 'error')
+      return
+    }
+
+    setImageVerifying(true)
+    setImageVerified(false)
+    setImagePreview('')
+
+    try {
+      // Validate URL format
+      try {
+        new URL(imageUrl)
+      } catch {
+        showNotification('رابط غير صحيح. تأكد من أن الرابط يبدأ بـ http:// أو https://', 'error')
+        setImageVerifying(false)
+        return
+      }
+
+      // Create an image element to verify the image can be loaded
+      const img = new Image()
+      let timeoutId
+
+      // Set a timeout for the image load
+      timeoutId = setTimeout(() => {
+        showNotification('انتهت مهلة الانتظار. تأكد من أن الرابط يشير إلى صورة حقيقية', 'error')
+        setImageVerifying(false)
+      }, 10000)
+
+      img.onload = () => {
+        clearTimeout(timeoutId)
+        
+        // Check file extension
+        const urlPath = imageUrl.toLowerCase()
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
+        const hasValidExtension = validExtensions.some(ext => urlPath.includes(ext))
+
+        // Try to determine type from Content-Type header
+        fetch(imageUrl, { method: 'HEAD' })
+          .then(response => {
+            const contentType = response.headers.get('content-type')
+            const isValidImageType = contentType && contentType.startsWith('image/')
+            
+            if (hasValidExtension || isValidImageType) {
+              setImageVerified(true)
+              setImagePreview(imageUrl)
+              showNotification('تم التحقق من الصورة بنجاح', 'success')
+            } else {
+              showNotification('الملف يجب أن يكون صورة (jpg, jpeg, png, gif, webp, bmp, svg)', 'error')
+            }
+            setImageVerifying(false)
+          })
+          .catch(() => {
+            // If HEAD request fails, consider it valid if it loaded as image
+            if (hasValidExtension) {
+              setImageVerified(true)
+              setImagePreview(imageUrl)
+              showNotification('تم التحقق من الصورة بنجاح', 'success')
+            } else {
+              showNotification('الملف يجب أن يكون صورة (jpg, jpeg, png, gif, webp, bmp, svg)', 'error')
+            }
+            setImageVerifying(false)
+          })
+      }
+
+      img.onerror = () => {
+        clearTimeout(timeoutId)
+        showNotification('لا يمكن تحميل الصورة. تأكد من أن الرابط صحيح وأن الصورة متاحة للوصول', 'error')
+        setImageVerifying(false)
+      }
+
+      img.src = imageUrl
+    } catch (error) {
+      showNotification('حدث خطأ أثناء التحقق من الصورة', 'error')
+      setImageVerifying(false)
     }
   }
 
@@ -188,7 +288,7 @@ export default function Settings() {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  رمز الكوبون الافتراضي (Default Coupon Code)
+                  رمز الكوبون الافتراضي (Default Coupon Code) <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>- اختياري</span>
                 </label>
                 <input
                   type="text"
@@ -196,12 +296,11 @@ export default function Settings() {
                   className="form-input"
                   value={formData.coupon_code || ''}
                   onChange={handleChange}
-                  required
                   placeholder="أدخل رمز الكوبون لإدراجه بالتذكير"
                   style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
                 />
                 <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
-                  مثال: SALLA10 (سيتم إرسال هذا الكوبون مع تذكير الواتساب للعميل).
+                  مثال: SALLA10 (اتركه فارغاً إذا لم تكن تريد إرسال كوبون).
                 </span>
               </div>
             </div>
@@ -323,6 +422,115 @@ export default function Settings() {
                     style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
                   />
                 </div>
+
+                <div className="form-group mb-3">
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    رابط صورة التذكير (Reminder Image URL) <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 400 }}>- اختياري</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      name="reminder_image_url"
+                      className="form-input"
+                      value={formData.reminder_image_url || ''}
+                      onChange={(e) => {
+                        handleChange(e)
+                        // Reset verification when URL changes
+                        if (e.target.value !== formData.reminder_image_url) {
+                          setImageVerified(false)
+                          setImagePreview('')
+                        }
+                      }}
+                      dir="ltr"
+                      placeholder="https://example.com/image.jpg"
+                      style={{ flex: 1, height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyImage}
+                      disabled={imageVerifying}
+                      style={{
+                        padding: '0 1.2rem',
+                        height: '40px',
+                        borderRadius: '6px',
+                        backgroundColor: imageVerified ? '#10b981' : imageVerifying ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.2)',
+                        border: '1px solid ' + (imageVerified ? '#059669' : imageVerifying ? 'rgba(16, 185, 129, 0.6)' : 'rgba(16, 185, 129, 0.4)'),
+                        color: imageVerified ? '#ffffff' : '#10b981',
+                        cursor: imageVerifying ? 'not-allowed' : 'pointer',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        transition: 'all 0.2s ease',
+                        opacity: imageVerifying ? 0.8 : 1,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        whiteSpace: 'nowrap',
+                        boxShadow: imageVerified ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!imageVerifying) {
+                          e.target.style.backgroundColor = imageVerified ? '#059669' : 'rgba(16, 185, 129, 0.35)'
+                          e.target.style.boxShadow = imageVerified ? '0 4px 12px rgba(16, 185, 129, 0.4)' : '0 2px 8px rgba(16, 185, 129, 0.2)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = imageVerified ? '#10b981' : imageVerifying ? 'rgba(16, 185, 129, 0.4)' : 'rgba(16, 185, 129, 0.2)'
+                        e.target.style.boxShadow = imageVerified ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none'
+                      }}
+                    >
+                      {imageVerifying ? (
+                        <>
+                          <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '0.85rem' }} />
+                          <span>جارٍ</span>
+                        </>
+                      ) : imageVerified ? (
+                        <>
+                          <i className="fa-solid fa-check" style={{ fontSize: '0.85rem' }} />
+                          <span>تم التحقق</span>
+                        </>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-magnifying-glass" style={{ fontSize: '0.85rem' }} />
+                          <span>تحقق</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                    تنسيقات مدعومة: JPG, JPEG, PNG, GIF, WebP, BMP, SVG. انقر على "تحقق" للتحقق من أن الرابط يشير إلى صورة حقيقية.
+                  </span>
+                </div>
+
+                {imagePreview && (
+                  <div
+                    style={{
+                      border: '2px solid rgba(16, 185, 129, 0.5)',
+                      borderRadius: '6px',
+                      padding: '0.75rem',
+                      backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#10b981' }}>
+                      <i className="fa-solid fa-image" style={{ marginRight: '0.5rem' }} />
+                      معاينة الصورة
+                    </div>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '150px',
+                        borderRadius: '4px',
+                        objectFit: 'contain',
+                        backgroundColor: 'rgba(0,0,0,0.2)'
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
