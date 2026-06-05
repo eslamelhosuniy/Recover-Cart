@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 scheduler = AsyncIOScheduler()
 
+from app.jobs.email_validation_job import run_email_validation_job
+
 def start_scheduler():
     if not scheduler.running:
         # Reminder job interval
@@ -30,8 +32,18 @@ def start_scheduler():
             replace_existing=True
         )
         
+        # Email validation job (every 5 minutes)
+        scheduler.add_job(
+            run_email_validation_job,
+            trigger=IntervalTrigger(minutes=5),
+            id="email_validation_job",
+            name="Validate pending emails",
+            replace_existing=True
+        )
+
+        
         scheduler.start()
-        logger.info(f"APScheduler started. Reminder job every {reminder_interval}m, Review job every 60m.")
+        logger.info(f"APScheduler started. Reminder job every {reminder_interval}m, Review job every 60m, Validation job every 5m.")
 
 def shutdown_scheduler():
     if scheduler.running:

@@ -10,4 +10,24 @@ from app.models.email_contact import EmailContact
 from app.models.email_campaign import EmailCampaign
 from app.models.email_tracking import EmailTrackingLog
 from app.models.customer_review import CustomerReview
+from app.models.email_campaign_contact import EmailCampaignContact
+from app.models.sendgrid_data import SendgridList, SendgridSender, SendgridSuppressionGroup
 
+__all__ = [
+    "Base",
+    "Customer",
+    "AbandonedCart",
+    "MessageLog",
+    "Store",
+    "User",
+    "RecoveredCart",
+    "EmailSetting",
+    "EmailContact",
+    "EmailCampaign",
+    "EmailTrackingLog",
+    "CustomerReview",
+    "EmailCampaignContact",
+    "SendgridList",
+    "SendgridSender",
+    "SendgridSuppressionGroup"
+]

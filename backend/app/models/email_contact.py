@@ -17,6 +17,11 @@ class EmailContact(Base):
     is_subscribed = Column(Boolean, default=True, nullable=False)
     sync_status = Column(String, default="pending", nullable=False)
     sendgrid_list_id = Column(String, nullable=True)
+    validation_status = Column(String, default="pending", nullable=False) # pending, valid, risky, invalid
+    validation_reason = Column(String, nullable=True)
+    has_mx = Column(Boolean, nullable=True)
+    mx_host = Column(String, nullable=True)
+    smtp_valid = Column(Boolean, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True),
