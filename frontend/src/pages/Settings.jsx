@@ -32,6 +32,12 @@ export default function Settings() {
     from_email: '',
     from_name: '',
     is_active: false,
+    validation_delay_hours: 0,
+    validate_smtp: false,
+    validate_mx: true,
+    validate_spelling: true,
+    warmup_enabled: false,
+    warmup_current_day: 1,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -886,6 +892,24 @@ export default function Settings() {
                 />
               </div>
 
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginTop: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل إحماء الإيميل (IP Warmup)</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>إرسال الحملات بشكل تدريجي لتجنب حظر النطاق (50، 100، 500...). اليوم الحالي: {emailData.warmup_current_day || 1}</div>
+                </div>
+                <div className="toggle-wrap" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    id="warmup_enabled"
+                    name="warmup_enabled"
+                    className="toggle-input"
+                    checked={emailData.warmup_enabled ?? false}
+                    onChange={handleChange}
+                  />
+                  <label htmlFor="warmup_enabled" className="toggle-label"></label>
+                </div>
+              </div>
+
               <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
@@ -909,6 +933,104 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Email Validation Settings Card */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 25, 37, 0.7) 0%, rgba(15, 17, 26, 0.8) 100%)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}
+            >
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#10b981', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-check-double" />
+                إعدادات فحص الإيميلات الآلي
+              </h3>
+
+              <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  تأخير الفحص (بالساعات)
+                </label>
+                <input
+                  type="number"
+                  name="validation_delay_hours"
+                  className="form-input"
+                  value={emailData.validation_delay_hours ?? 0}
+                  onChange={handleChange}
+                  min={0}
+                  dir="ltr"
+                  placeholder="0"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                  عدد الساعات التي سيتم انتظارها قبل التحقق من الإيميلات الجديدة. ضع 0 للتحقق الفوري.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>فحص الصياغة الإملائية (Spelling / Syntax)</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>يتحقق من صيغة الإيميل والنطاقات المؤقتة.</div>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="validate_spelling"
+                      name="validate_spelling"
+                      className="toggle-input"
+                      checked={emailData.validate_spelling ?? true}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="validate_spelling" className="toggle-label"></label>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>فحص سجلات النطاق (MX Check)</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>يتحقق من وجود خادم بريد يستقبل الرسائل.</div>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="validate_mx"
+                      name="validate_mx"
+                      className="toggle-input"
+                      checked={emailData.validate_mx ?? true}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="validate_mx" className="toggle-label"></label>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)' }}>فحص صندوق البريد (SMTP Check)</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>يتصل بالخادم ليتأكد من وجود البريد (قد يكون أبطأ).</div>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="validate_smtp"
+                      name="validate_smtp"
+                      className="toggle-input"
+                      checked={emailData.validate_smtp ?? false}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="validate_smtp" className="toggle-label"></label>
+                  </div>
+                </div>
+
               </div>
             </div>
 

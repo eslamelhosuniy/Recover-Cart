@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { authApi, storesApi } from '../api/client'
+import { authApi, storesApi, emailMarketingApi } from '../api/client'
 
 const AuthContext = createContext(null)
 
@@ -91,6 +91,16 @@ export function AuthProvider({ children }) {
     }
     window.location.reload()
   }, [stores])
+
+  
+  // Sync SendGrid data in background on store change
+  useEffect(() => {
+    if (activeStore?.id) {
+      emailMarketingApi.syncSendgridData(activeStore.id).catch(err => {
+        console.error("Background sync failed", err)
+      })
+    }
+  }, [activeStore?.id])
 
   return (
     <AuthContext.Provider value={{ 
