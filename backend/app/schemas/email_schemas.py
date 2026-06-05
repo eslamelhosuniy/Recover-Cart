@@ -9,6 +9,12 @@ class EmailSettingCreate(BaseModel):
     from_email: Optional[EmailStr] = None
     from_name: Optional[str] = None
     is_active: bool = False
+    validation_delay_hours: int = 0
+    validate_smtp: bool = False
+    validate_mx: bool = True
+    validate_spelling: bool = True
+    warmup_enabled: bool = False
+    warmup_current_day: int = 1
 
 class EmailSettingResponse(EmailSettingCreate):
     id: UUID
@@ -35,6 +41,18 @@ class EmailCampaignCreate(BaseModel):
     list_id: str
     suppression_group_id: Optional[int] = None
     custom_unsubscribe_url: Optional[str] = None
+    is_warmup: bool = False
+
+class CampaignUpdate(BaseModel):
+    name: Optional[str] = None
+    subject: Optional[str] = None
+    status: Optional[str] = None
+    html_content: Optional[str] = None
+    sender_id: Optional[int] = None
+    list_id: Optional[str] = None
+    suppression_group_id: Optional[int] = None
+    custom_unsubscribe_url: Optional[str] = None
+    is_warmup: Optional[bool] = None
 
 class SingleEmailSend(BaseModel):
     to_email: EmailStr

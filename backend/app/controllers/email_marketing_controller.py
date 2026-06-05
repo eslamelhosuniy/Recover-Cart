@@ -56,13 +56,13 @@ async def create_contact(
     
     if isinstance(contact_in, list):
         for contact in contact_in:
-            contact_data = contact.model_dump()
+            contact_data = contact.model_dump(exclude={"list_id"})
             contact_data["store_id"] = store_id
             contact_data["sendgrid_list_id"] = contact.list_id
             await repo.create(db, contact_data)
         return {"message": f"{len(contact_in)} contacts added to sync queue"}
     else:
-        contact_data = contact_in.model_dump()
+        contact_data = contact_in.model_dump(exclude={"list_id"})
         contact_data["store_id"] = store_id
         contact_data["sendgrid_list_id"] = contact_in.list_id
         await repo.create(db, contact_data)
@@ -114,6 +114,17 @@ async def create_campaign(store_id: UUID, campaign_in: EmailCampaignCreate, db: 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+from app.schemas.email_schemas import CampaignUpdate
+
+@router.put("/campaigns/{store_id}/{campaign_id}")
+async def update_campaign(store_id: UUID, campaign_id: UUID, campaign_in: CampaignUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        updated = await EmailMarketingService().update_campaign(db, str(store_id), str(campaign_id), campaign_in.model_dump(exclude_unset=True))
+        return {"message": "Campaign updated", "campaign": updated}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/senders/{store_id}")
 async def get_senders(store_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     await get_store_for_user(store_id, db, current_user)
@@ -138,6 +149,15 @@ async def create_list(store_id: UUID, list_in: EmailListCreate, db: AsyncSession
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.delete("/lists/{store_id}/{list_id}")
+async def delete_list(store_id: UUID, list_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        await EmailMarketingService().delete_list(db, str(store_id), list_id)
+        return {"message": "List deleted"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.get("/suppression-groups/{store_id}")
 async def get_suppression_groups(store_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     await get_store_for_user(store_id, db, current_user)
@@ -151,6 +171,40 @@ async def create_suppression_group(store_id: UUID, group_in: SuppressionGroupCre
     await get_store_for_user(store_id, db, current_user)
     try:
         return await EmailMarketingService().create_suppression_group(db, str(store_id), group_in.name, group_in.description, group_in.is_default)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/suppression-groups/{store_id}/{group_id}")
+async def delete_suppression_group(store_id: UUID, group_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        await EmailMarketingService().delete_suppression_group(db, str(store_id), group_id)
+        return {"message": "Suppression group deleted"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/designs/{store_id}")
+async def get_designs(store_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().get_designs(db, str(store_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/designs/{store_id}/{design_id}")
+async def get_design(store_id: UUID, design_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().get_design(db, str(store_id), design_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/designs/{store_id}/{design_id}")
+async def delete_design(store_id: UUID, design_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        await EmailMarketingService().delete_design(db, str(store_id), design_id)
+        return {"message": "Design deleted"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -171,5 +225,213 @@ async def send_transactional_email(store_id: UUID, email_in: SingleEmailSend, db
             db, str(store_id), email_in.to_email, email_in.subject, email_in.html_content, email_in.from_name
         )
         return {"message": "Email queued for sending", "details": response}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+from sqlalchemy.future import select
+from sqlalchemy import or_, and_, desc, func
+from datetime import datetime
+from app.models.email_contact import EmailContact
+from app.models.email_campaign_contact import EmailCampaignContact
+from app.models.email_campaign import EmailCampaign
+from typing import Optional
+from pydantic import BaseModel
+
+@router.get("/contacts-list/{store_id}")
+async def get_contacts_list(
+    store_id: UUID,
+    skip: int = 0,
+    limit: int = 50,
+    search: Optional[str] = None,
+    list_id: Optional[str] = None,
+    campaign_id: Optional[UUID] = None,
+    sent_in_campaigns: Optional[bool] = None,
+    validation_status: Optional[str] = None,
+    sync_status: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    
+    query = select(EmailContact).where(EmailContact.store_id == store_id)
+    
+    if search:
+        query = query.where(or_(
+            EmailContact.email.ilike(f"%{search}%"),
+            EmailContact.first_name.ilike(f"%{search}%"),
+            EmailContact.last_name.ilike(f"%{search}%")
+        ))
+    
+    if list_id:
+        query = query.where(EmailContact.sendgrid_list_id == list_id)
+        
+    if validation_status:
+        query = query.where(EmailContact.validation_status == validation_status)
+        
+    if sync_status:
+        query = query.where(EmailContact.sync_status == sync_status)
+        
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            query = query.where(EmailContact.created_at >= start_dt)
+        except ValueError:
+            pass
+            
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            query = query.where(EmailContact.created_at <= end_dt)
+        except ValueError:
+            pass
+
+    if campaign_id:
+        query = query.join(EmailCampaignContact).where(EmailCampaignContact.campaign_id == campaign_id)
+    elif sent_in_campaigns is True:
+        query = query.join(EmailCampaignContact)
+    elif sent_in_campaigns is False:
+        query = query.outerjoin(EmailCampaignContact).where(EmailCampaignContact.campaign_id == None)
+
+    # Order
+    query = query.order_by(desc(EmailContact.created_at))
+    
+    # Get total count
+    total = await db.scalar(select(func.count()).select_from(query.subquery()))
+    
+    # Get items
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
+    contacts = result.scalars().unique().all()
+    
+    return {
+        "total": total,
+        "data": contacts
+    }
+
+@router.get("/contacts/{store_id}/by-list/{list_id}")
+async def get_contacts_by_list(
+    store_id: UUID,
+    list_id: str,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().get_contacts_by_list(db, str(store_id), list_id, skip, limit)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class ContactUpdateInfo(BaseModel):
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    list_id: Optional[str] = None
+
+@router.put("/contacts/{store_id}/{contact_id}")
+async def update_contact(
+    store_id: UUID,
+    contact_id: UUID,
+    update_data: ContactUpdateInfo,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    
+    contact = await db.get(EmailContact, contact_id)
+    if not contact or contact.store_id != store_id:
+        raise HTTPException(status_code=404, detail="Contact not found")
+        
+    if update_data.email is not None: contact.email = update_data.email
+    if update_data.first_name is not None: contact.first_name = update_data.first_name
+    if update_data.last_name is not None: contact.last_name = update_data.last_name
+    if update_data.list_id is not None: contact.sendgrid_list_id = update_data.list_id
+    
+    contact.sync_status = "pending"
+    await db.commit()
+    await db.refresh(contact)
+    
+    try:
+        from app.services.email_marketing_service import EmailMarketingService
+        await EmailMarketingService().sync_pending_contacts(db, str(store_id))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to trigger sync: {e}")
+        
+    return contact
+
+@router.delete("/contacts/{store_id}/{contact_id}")
+async def delete_contact(
+    store_id: UUID,
+    contact_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        await EmailMarketingService().delete_contact(db, str(store_id), str(contact_id))
+        return {"message": "Contact deleted"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/campaigns/{store_id}")
+async def get_campaigns(
+    store_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    
+    # Sync statuses silently
+    try:
+        from app.services.email_marketing_service import EmailMarketingService
+        await EmailMarketingService().sync_campaigns_status(db, str(store_id))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Failed to sync campaigns status: {e}")
+        
+    result = await db.execute(select(EmailCampaign).where(and_(EmailCampaign.store_id == store_id, EmailCampaign.parent_id == None)).order_by(desc(EmailCampaign.created_at)))
+    return result.scalars().all()
+
+@router.get("/campaigns/{store_id}/{campaign_id}/children")
+async def get_child_campaigns(
+    store_id: UUID,
+    campaign_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    result = await db.execute(select(EmailCampaign).where(and_(EmailCampaign.store_id == store_id, EmailCampaign.parent_id == campaign_id)).order_by(EmailCampaign.warmup_day))
+    return result.scalars().all()
+
+
+@router.get("/campaigns/{store_id}/stats")
+async def get_campaigns_stats(
+    store_id: UUID,
+    campaign_ids: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        ids_list = campaign_ids.split(",") if campaign_ids else None
+        return await EmailMarketingService().get_campaign_stats(db, str(store_id), ids_list)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/sync-sendgrid/{store_id}")
+async def sync_sendgrid(
+    store_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    service = EmailMarketingService()
+    try:
+        return await service.sync_sendgrid_data(db, str(store_id))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
