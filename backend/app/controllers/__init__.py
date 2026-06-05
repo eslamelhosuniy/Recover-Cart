@@ -10,6 +10,11 @@ from .auth_controller import router as auth_router
 from .whatsapp_webhook_controller import router as whatsapp_webhook_router
 from .email_marketing_controller import router as email_marketing_router
 from .email_webhook_controller import router as email_webhook_router
+from .email_validation_controller import router as email_validation_router
+
+# Set up prefixes for specific routers if they don't have them in their decorators
+email_validation_router.prefix = "/api/v1/email-validation"
+email_validation_router.tags = ["Email Validation"]
 
 routers = [
     auth_router,
@@ -23,5 +28,6 @@ routers = [
     store_router,
     logs_router,
     email_marketing_router,
-    email_webhook_router
+    email_webhook_router,
+    email_validation_router
 ]
