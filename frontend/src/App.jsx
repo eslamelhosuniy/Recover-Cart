@@ -18,6 +18,10 @@ import Stores from './pages/Stores'
 import AdminStores from './pages/AdminStores'
 import EmailContacts from './pages/EmailContacts'
 import EmailCampaigns from './pages/EmailCampaigns'
+import EmailLists from './pages/EmailLists'
+import EmailDesigns from './pages/EmailDesigns'
+import EmailSuppressionGroups from './pages/EmailSuppressionGroups'
+import EmailValidation from './pages/EmailValidation'
 import DocumentationHome from './pages/DocumentationHome'
 import DocumentationSection from './pages/DocumentationSection'
 
@@ -54,7 +58,11 @@ export default function App() {
                 <Route path="registered-customers" element={<RegisteredCustomers />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="email/contacts" element={<EmailContacts />} />
+                <Route path="email/lists" element={<EmailLists />} />
                 <Route path="email/campaigns" element={<EmailCampaigns />} />
+                <Route path="email/designs" element={<EmailDesigns />} />
+                <Route path="email/suppressions" element={<EmailSuppressionGroups />} />
+                <Route path="email/validation" element={<EmailValidation />} />
               </Route>
 
               {/* Catch-all */}

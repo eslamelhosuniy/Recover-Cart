@@ -154,15 +154,39 @@ export const emailMarketingApi = {
   }),
   
   createCampaign: (storeId, data) => apiClient.post(`/email-marketing/campaigns/${storeId}`, data),
+  getCampaigns: (storeId) => apiClient.get(`/email-marketing/campaigns/${storeId}`),
+  updateCampaign: (storeId, campaignId, data) => apiClient.put(`/email-marketing/campaigns/${storeId}/${campaignId}`, data),
   sendCampaign: (storeId, campaignId) => apiClient.post(`/email-marketing/campaigns/${storeId}/${campaignId}/send`),
   
   sendSingleEmail: (storeId, data) => apiClient.post(`/email-marketing/send-email/${storeId}`, data),
   
-  getSenders: (storeId) => apiClient.get(`/email-marketing/senders/${storeId}`),
+  getContacts: (storeId, params = {}) => {
+    let url = `/email-marketing/contacts-list/${storeId}?`
+    const searchParams = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, value)
+      }
+    }
+    return apiClient.get(url + searchParams.toString())
+  },
+  updateContact: (storeId, contactId, data) => apiClient.put(`/email-marketing/contacts/${storeId}/${contactId}`, data),
+  deleteContact: (storeId, contactId) => apiClient.delete(`/email-marketing/contacts/${storeId}/${contactId}`),
+
   getLists: (storeId) => apiClient.get(`/email-marketing/lists/${storeId}`),
   createList: (storeId, data) => apiClient.post(`/email-marketing/lists/${storeId}`, data),
+  deleteList: (storeId, listId) => apiClient.delete(`/email-marketing/lists/${storeId}/${listId}`),
+  getContactsByList: (storeId, listId, params) => apiClient.get(`/email-marketing/contacts/${storeId}/by-list/${listId}`, { params }),
+  getSenders: (storeId) => apiClient.get(`/email-marketing/senders/${storeId}`),
   getSuppressionGroups: (storeId) => apiClient.get(`/email-marketing/suppression-groups/${storeId}`),
   createSuppressionGroup: (storeId, data) => apiClient.post(`/email-marketing/suppression-groups/${storeId}`, data),
+  deleteSuppressionGroup: (storeId, groupId) => apiClient.delete(`/email-marketing/suppression-groups/${storeId}/${groupId}`),
+  syncSendgridData: (storeId) => apiClient.post(`/email-marketing/sync-sendgrid/${storeId}`),
+  getChildCampaigns: (storeId, campaignId) => apiClient.get(`/email-marketing/campaigns/${storeId}/${campaignId}/children`),
+  getCampaignsStats: (storeId, campaignIdsStr) => apiClient.get(`/email-marketing/campaigns/${storeId}/stats`, { params: { campaign_ids: campaignIdsStr } }),
+  getDesigns: (storeId) => apiClient.get(`/email-marketing/designs/${storeId}`),
+  getDesign: (storeId, designId) => apiClient.get(`/email-marketing/designs/${storeId}/${designId}`),
+  deleteDesign: (storeId, designId) => apiClient.delete(`/email-marketing/designs/${storeId}/${designId}`),
 }
 
 // ── Reviews ───────────────────────────────────────────────
@@ -181,6 +205,14 @@ export const reviewsApi = {
     if (endDate) url += `${startDate ? '&' : '?'}end_date=${endDate}`
     return apiClient.get(url)
   },
+}
+
+// ── Email Validation ─────────────────────────────────────────
+export const emailValidationApi = {
+  start: () => apiClient.post('/email-validation/start'),
+  stats: () => apiClient.get('/email-validation/stats'),
+  listContacts: (skip = 0, limit = 50) => apiClient.get(`/email-validation/contacts?skip=${skip}&limit=${limit}`),
+  validateSingle: (contactId) => apiClient.post(`/email-validation/validate/${contactId}`),
 }
 
 export default apiClient

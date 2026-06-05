@@ -12,7 +12,11 @@ const cartSubItems = [
 
 const emailSubItems = [
   { to: '/email/contacts', icon: 'fa-address-book', label: 'جهات الاتصال' },
+  { to: '/email/lists', icon: 'fa-list-ul', label: 'قوائم الاتصال' },
   { to: '/email/campaigns', icon: 'fa-paper-plane', label: 'الحملات الإعلانية' },
+  { to: '/email/designs', icon: 'fa-palette', label: 'التصاميم والقوالب' },
+  { to: '/email/suppressions', icon: 'fa-user-slash', label: 'الاستبعادات' },
+  { to: '/email/validation', icon: 'fa-check-double', label: 'فحص الإيميلات' },
 ]
 
 
