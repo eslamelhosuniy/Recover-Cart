@@ -9,22 +9,22 @@ export default function EmailLists() {
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
-  
+
   // Pagination for lists (client-side since API returns all)
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
-  
+
   // List details modal
   const [showListModal, setShowListModal] = useState(false)
   const [selectedList, setSelectedList] = useState(null)
   const [listContacts, setListContacts] = useState([])
   const [contactsLoading, setContactsLoading] = useState(false)
-  
+
   // Pagination for list contacts (server-side)
   const [contactsPage, setContactsPage] = useState(1)
   const [contactsTotal, setContactsTotal] = useState(0)
   const contactsPageSize = 20
-  
+
   // Add new list
   const [showAddModal, setShowAddModal] = useState(false)
   const [newListName, setNewListName] = useState('')
@@ -58,7 +58,7 @@ export default function EmailLists() {
       await emailMarketingApi.deleteList(activeStoreId, listId)
       showNotification("تم حذف القائمة بنجاح", "success")
       fetchLists()
-    } catch(err) {
+    } catch (err) {
       showNotification("فشل حذف القائمة", "error")
     }
   }
@@ -94,7 +94,7 @@ export default function EmailLists() {
       const res = await emailMarketingApi.getContactsByList(activeStoreId, listId, { skip, limit: contactsPageSize })
       setListContacts(res.data.items || [])
       setContactsTotal(res.data.total || 0)
-    } catch(err) {
+    } catch (err) {
       showNotification("فشل جلب جهات الاتصال", "error")
     } finally {
       setContactsLoading(false)
@@ -211,7 +211,7 @@ export default function EmailLists() {
             </form>
           </div>
         </div>
-      , document.body)}
+        , document.body)}
 
       {/* Contacts Modal */}
       {showListModal && selectedList && createPortal(
@@ -223,7 +223,7 @@ export default function EmailLists() {
               </h3>
               <button className="btn btn-secondary btn-sm" onClick={() => setShowListModal(false)}>إغلاق</button>
             </div>
-            
+
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {contactsLoading ? (
                 <div style={{ padding: '2rem 0' }}><Spinner center /></div>
@@ -255,7 +255,7 @@ export default function EmailLists() {
                 </div>
               )}
             </div>
-            
+
             {!contactsLoading && contactsTotal > contactsPageSize && (
               <div className="pagination" style={{ padding: '1rem 0 0 0', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid var(--border)', marginTop: '1rem' }}>
                 <button className="btn btn-sm btn-secondary" disabled={contactsPage === 1} onClick={() => handleContactsPageChange(contactsPage - 1)}>السابق</button>
@@ -265,7 +265,7 @@ export default function EmailLists() {
             )}
           </div>
         </div>
-      , document.body)}
+        , document.body)}
     </div>
   )
 }

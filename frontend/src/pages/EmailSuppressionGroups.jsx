@@ -9,11 +9,11 @@ export default function EmailSuppressionGroups() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
-  
+
   // Pagination
   const [page, setPage] = useState(1)
   const [pageSize] = useState(10)
-  
+
   // Add new group modal
   const [showAddModal, setShowAddModal] = useState(false)
   const [newGroup, setNewGroup] = useState({ name: '', description: '', is_default: false })
@@ -48,7 +48,7 @@ export default function EmailSuppressionGroups() {
       await emailMarketingApi.deleteSuppressionGroup(activeStoreId, groupId)
       showNotification("تم حذف المجموعة بنجاح", "success")
       fetchGroups()
-    } catch(err) {
+    } catch (err) {
       showNotification("فشل حذف المجموعة", "error")
     }
   }
@@ -159,14 +159,14 @@ export default function EmailSuppressionGroups() {
             <form onSubmit={handleAddGroup}>
               <div className="form-group mb-3">
                 <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>اسم المجموعة <span style={{ color: '#ef4444' }}>*</span></label>
-                <input type="text" required className="form-input" value={newGroup.name} onChange={(e) => setNewGroup({...newGroup, name: e.target.value})} style={{ height: '42px' }} />
+                <input type="text" required className="form-input" value={newGroup.name} onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })} style={{ height: '42px' }} />
               </div>
               <div className="form-group mb-3">
                 <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 600 }}>الوصف</label>
-                <textarea className="form-input" rows="3" value={newGroup.description} onChange={(e) => setNewGroup({...newGroup, description: e.target.value})} />
+                <textarea className="form-input" rows="3" value={newGroup.description} onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })} />
               </div>
               <div className="form-group mb-4" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input type="checkbox" id="is_default" checked={newGroup.is_default} onChange={(e) => setNewGroup({...newGroup, is_default: e.target.checked})} style={{ width: '18px', height: '18px' }} />
+                <input type="checkbox" id="is_default" checked={newGroup.is_default} onChange={(e) => setNewGroup({ ...newGroup, is_default: e.target.checked })} style={{ width: '18px', height: '18px' }} />
                 <label htmlFor="is_default" style={{ fontSize: '0.9rem', cursor: 'pointer', margin: 0 }}>جعلها المجموعة الافتراضية</label>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
@@ -178,7 +178,7 @@ export default function EmailSuppressionGroups() {
             </form>
           </div>
         </div>
-      , document.body)}
+        , document.body)}
     </div>
   )
 }

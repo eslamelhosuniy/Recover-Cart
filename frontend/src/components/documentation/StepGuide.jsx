@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLanguage } from '../../contexts/LanguageContext'
 import styles from './StepGuide.module.css'
+import imageMapping from './imageMapping.json'
 
 export default function StepGuide({ steps, sectionId }) {
   const { language } = useLanguage()
   const isArabic = language === 'ar'
   const [modalImage, setModalImage] = useState(null)
 
-  const getImagePath = (stepNumber) => {
+  const getImageUrl = (stepNumber) => {
     // Map step numbers to image filenames
-    if (stepNumber === 1) {
-      return `image.webp`
-    }
-    return `image (${stepNumber - 1}).webp`
+    const filename = stepNumber === 1 ? 'image.webp' : `image (${stepNumber - 1}).webp`
+    // Use mapped cloud URL if available, otherwise fall back to local relative path
+    return imageMapping[sectionId]?.[filename] || `/documentation/${sectionId}/${filename}`
   }
 
   const openModal = (src, alt) => {
@@ -57,7 +57,7 @@ export default function StepGuide({ steps, sectionId }) {
               {/* Clickable image */}
               <div className={styles.imageWrapper}>
                 <img
-                  src={`/documentation/${sectionId}/${getImagePath(step.number)}`}
+                  src={getImageUrl(step.number)}
                   alt={`${isArabic ? 'الخطوة' : 'Step'} ${step.number}`}
                   className={styles.image}
                   onClick={(e) =>

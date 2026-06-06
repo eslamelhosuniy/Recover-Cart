@@ -9,7 +9,7 @@ export default function EmailDesigns() {
   const [designs, setDesigns] = useState([])
   const [loading, setLoading] = useState(false)
   const [notification, setNotification] = useState(null)
-  
+
   // Pagination
   const [page, setPage] = useState(1)
   const [pageSize] = useState(12) // 12 for grid layout
@@ -42,7 +42,7 @@ export default function EmailDesigns() {
       await emailMarketingApi.deleteDesign(activeStoreId, designId)
       showNotification("تم حذف التصميم بنجاح", "success")
       fetchDesigns()
-    } catch(err) {
+    } catch (err) {
       showNotification("فشل حذف التصميم", "error")
     }
   }
