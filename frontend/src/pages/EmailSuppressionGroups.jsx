@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { emailMarketingApi } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
-import Spinner from '../components/common/Spinner'
+import Spinner from '../components/ui/Spinner'
 import { createPortal } from 'react-dom'
 
 export default function EmailSuppressionGroups() {

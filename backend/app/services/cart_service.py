@@ -85,7 +85,7 @@ class CartService:
                     salla_customer_id=salla_customer_id,
                     full_name=f"{customer_data.get('name', '')}".strip(),
                     mobile=customer_data.get("mobile", ""),
-                    mobile_code=customer_data.get("mobile_code", ""),
+                    mobile_code="",
                     email=customer_data.get("email")
                 )
                 cust_data = cust_in.model_dump()
