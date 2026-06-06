@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler()
 
 from app.jobs.email_validation_job import run_email_validation_job
+from app.jobs.sync_sendgrid_job import run_sync_sendgrid_job
 
 def start_scheduler():
     if not scheduler.running:
@@ -38,6 +39,15 @@ def start_scheduler():
             trigger=IntervalTrigger(minutes=5),
             id="email_validation_job",
             name="Validate pending emails",
+            replace_existing=True
+        )
+        
+        # SendGrid Two-Way Sync job (every 60 minutes)
+        scheduler.add_job(
+            run_sync_sendgrid_job,
+            trigger=IntervalTrigger(minutes=60),
+            id="sync_sendgrid_job",
+            name="Sync SendGrid contacts and campaigns",
             replace_existing=True
         )
 

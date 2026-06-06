@@ -533,4 +533,9 @@ class EmailMarketingService:
                 db.add(new_sg)
 
         await db.commit()
-        return {"message": "Synced successfully"}
+        
+        # Trigger background heavy sync for contacts and campaigns
+        from app.jobs.sync_sendgrid_job import trigger_heavy_sync_for_store
+        asyncio.create_task(trigger_heavy_sync_for_store(store_id))
+        
+        return {"message": "Basic sync completed, heavy data sync started in background"}
