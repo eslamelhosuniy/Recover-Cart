@@ -390,7 +390,7 @@ class EmailMarketingService:
             if not contacts:
                 raise ValueError("No contacts found for this list.")
                 
-            WARMUP_SCHEDULE = [50, 100, 500, 1000, 5000, 10000, 50000]
+            WARMUP_SCHEDULE = [45, 90, 180, 360, 720, 1440, 2880, 5760, 11520, 23040, 46080, 50000]
             chunks = []
             remaining = list(contacts)
             day_idx = 0

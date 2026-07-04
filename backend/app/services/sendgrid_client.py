@@ -16,15 +16,20 @@ class SendGridClient:
 
     async def add_or_update_contacts(self, list_id: str | None, contacts: List[Dict[str, Any]]) -> dict:
         url = f"{self.BASE_URL}/marketing/contacts"
-        payload = {
-            "contacts": contacts
-        }
-        if list_id and list_id != 'no_list':
-            payload["list_ids"] = [list_id]
+        chunk_size = 20000
+        last_response = {}
         async with httpx.AsyncClient() as client:
-            response = await client.put(url, headers=self.headers, json=payload, timeout=10.0)
-            response.raise_for_status()
-            return response.json()
+            for i in range(0, len(contacts), chunk_size):
+                chunk = contacts[i:i + chunk_size]
+                payload = {
+                    "contacts": chunk
+                }
+                if list_id and list_id != 'no_list':
+                    payload["list_ids"] = [list_id]
+                response = await client.put(url, headers=self.headers, json=payload, timeout=15.0)
+                response.raise_for_status()
+                last_response = response.json()
+        return last_response
 
     async def get_senders(self) -> List[Dict[str, Any]]:
         url = f"{self.BASE_URL}/marketing/senders"
@@ -225,14 +230,10 @@ class SendGridClient:
 
     async def delete_suppression_group(self, group_id: int):
         url = f"{self.BASE_URL}/asm/groups/{group_id}"
-            if response.status_code >= 400:
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(url, headers=self.headers, timeout=10.0)
+            if response.status_code >= 400 and response.status_code != 404:
                 raise ValueError(f"SendGrid API Error: {response.status_code} - {response.text}")
-            data = response.json()
-            if isinstance(data, list):
-                return data
-            elif isinstance(data, dict) and "result" in data:
-                return data["result"]
-            return []
 
     async def get_lists(self) -> List[Dict[str, Any]]:
         url = f"{self.BASE_URL}/marketing/lists"

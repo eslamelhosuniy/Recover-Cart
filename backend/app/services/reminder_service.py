@@ -112,22 +112,20 @@ class ReminderService:
                     "type": "header",
                     "parameters": [
                         {
-                            "type": "image",
-                            "image": {
-                                "link": store_settings.reminder_image_url
-                            }
+                            "type": "text",
+                            "parameter_name": "name",
+                            "text": customer_name
                         }
                     ]
                 })
+
             
             # Build body parameters dynamically
             body_parameters = [
-                {
-                    "type": "name",
-                    "parameter_name": "name",
-                    "text": customer_name
-                }
+
             ]
+
+            
             
             # Add coupon only if coupon_code is set
             if store_settings.coupon_code:
