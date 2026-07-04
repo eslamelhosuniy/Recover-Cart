@@ -81,22 +81,66 @@ async def upload_contacts_csv(
     
     content = await file.read()
     decoded = content.decode('utf-8-sig').splitlines()
-    reader = csv.DictReader(decoded)
+    reader = csv.reader(decoded)
     
+    # Read headers
+    headers = next(reader, None)
+    if not headers:
+        return {"message": "Empty file uploaded"}
+        
+    # Find column indices
+    email_idx = -1
+    first_name_idx = -1
+    last_name_idx = -1
+    
+    for idx, col in enumerate(headers):
+        col_clean = col.lower().strip()
+        if "email" in col_clean or "mail" in col_clean:
+            email_idx = idx
+        elif "first" in col_clean or "الاسم الأول" in col_clean:
+            first_name_idx = idx
+        elif "last" in col_clean or "الاسم الأخير" in col_clean:
+            last_name_idx = idx
+            
+    # Fallback to the first column if no email header is detected
+    if email_idx == -1:
+        email_idx = 0
+        
     count = 0
     for row in reader:
-        if not row.get("email"): continue
-        data = {
-            "store_id": store_id,
-            "email": row["email"].strip(),
-            "first_name": row.get("first_name"),
-            "last_name": row.get("last_name"),
-            "sendgrid_list_id": list_id
-        }
-        await repo.create(db, data)
+        if not row or len(row) <= email_idx:
+            continue
+        email = row[email_idx].strip()
+        if not email or "@" not in email:
+            continue
+            
+        first_name = row[first_name_idx].strip() if (first_name_idx != -1 and len(row) > first_name_idx) else None
+        last_name = row[last_name_idx].strip() if (last_name_idx != -1 and len(row) > last_name_idx) else None
+        
+        # Check if contact already exists to avoid unique constraint crashes
+        existing = await repo.get_by_email_and_store(db, str(store_id), email)
+        if existing:
+            update_data = {}
+            if first_name:
+                update_data["first_name"] = first_name
+            if last_name:
+                update_data["last_name"] = last_name
+            if list_id:
+                update_data["sendgrid_list_id"] = list_id
+            if update_data:
+                await repo.update(db, existing, update_data)
+        else:
+            data = {
+                "store_id": store_id,
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+                "sendgrid_list_id": list_id
+            }
+            await repo.create(db, data)
         count += 1
         
-    return {"message": f"{count} contacts uploaded and added to sync queue"}
+    return {"message": f"{count} contacts uploaded and processed"}
 
 
 @router.post("/campaigns/{store_id}")
