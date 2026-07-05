@@ -455,13 +455,25 @@ class SendGridClient:
             return response.json()
 
     async def get_contacts_page(self, query: str = "", page_token: str = None) -> dict:
+        # If no query and no page token, use the GET listing endpoint instead
+        # The /marketing/contacts/search endpoint requires a non-empty 'query' in the JSON body
+        if not query and not page_token:
+            url = f"{self.BASE_URL}/marketing/contacts"
+            params = {}
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url, headers=self.headers, params=params, timeout=10.0)
+                if response.status_code >= 400:
+                    raise ValueError(f"SendGrid API Error: {response.status_code} - {response.text}")
+                return response.json()
+
+        # Otherwise use the search endpoint (POST) which accepts 'query' and/or 'page_token'
         url = f"{self.BASE_URL}/marketing/contacts/search"
         payload = {}
         if query:
             payload["query"] = query
         if page_token:
             payload["page_token"] = page_token
-            
+
         async with httpx.AsyncClient() as client:
             response = await client.post(url, headers=self.headers, json=payload, timeout=10.0)
             if response.status_code >= 400:

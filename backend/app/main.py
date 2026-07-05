@@ -7,10 +7,21 @@ from app.core.logging_config import setup_logging
 from app.core.exceptions import AppException, app_exception_handler, global_exception_handler
 from app.jobs.scheduler import start_scheduler, shutdown_scheduler
 from app.controllers import routers
+from app.config import settings
+import asyncio
+from app.jobs.sync_sendgrid_job import run_sync_sendgrid_job
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_scheduler()
+    # If running in production, trigger a one-time SendGrid heavy sync on startup
+    try:
+        if settings.app_env == "production":
+            asyncio.create_task(run_sync_sendgrid_job())
+    except Exception:
+        # Don't fail startup for non-critical background job errors
+        pass
+
     yield
     shutdown_scheduler()
 
