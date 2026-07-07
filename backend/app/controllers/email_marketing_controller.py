@@ -261,6 +261,23 @@ async def send_campaign(store_id: UUID, campaign_id: UUID, db: AsyncSession = De
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/campaigns/{store_id}/{campaign_id}/run-live")
+async def run_live_campaign(store_id: UUID, campaign_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        await EmailMarketingService().run_live_campaign(db, str(store_id), str(campaign_id))
+        return {"message": "Campaign started live"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/campaigns/{store_id}/{campaign_id}/runs")
+async def get_campaign_runs(store_id: UUID, campaign_id: UUID, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    await get_store_for_user(store_id, db, current_user)
+    try:
+        return await EmailMarketingService().get_campaign_run_logs(db, str(store_id), str(campaign_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 @router.post("/send-email/{store_id}")
 async def send_transactional_email(store_id: UUID, email_in: SingleEmailSend, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
     await get_store_for_user(store_id, db, current_user)

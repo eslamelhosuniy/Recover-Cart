@@ -1,10 +1,22 @@
 import axios from 'axios'
 
 const getApiBase = () => {
-  const envBase = import.meta.env.VITE_API_BASE || '/api/v1'
-  if (envBase.startsWith('/') && typeof window !== 'undefined') {
-    return window.location.origin + envBase
+  const envBase = import.meta.env.VITE_API_BASE?.trim()
+  const isBrowser = typeof window !== 'undefined'
+
+  if (!envBase) {
+    return isBrowser ? `${window.location.origin}/api/v1` : '/api/v1'
   }
+
+  if (envBase.startsWith('/')) {
+    return isBrowser ? `${window.location.origin}${envBase}` : envBase
+  }
+
+  const isLocalHost = /(?:^|\/\/)(localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?/i.test(envBase)
+  if (isLocalHost && isBrowser) {
+    return `${window.location.origin}/api/v1`
+  }
+
   return envBase
 }
 
@@ -157,6 +169,7 @@ export const emailMarketingApi = {
   getCampaigns: (storeId) => apiClient.get(`/email-marketing/campaigns/${storeId}`),
   updateCampaign: (storeId, campaignId, data) => apiClient.put(`/email-marketing/campaigns/${storeId}/${campaignId}`, data),
   sendCampaign: (storeId, campaignId) => apiClient.post(`/email-marketing/campaigns/${storeId}/${campaignId}/send`),
+  runLiveCampaign: (storeId, campaignId) => apiClient.post(`/email-marketing/campaigns/${storeId}/${campaignId}/run-live`),
   
   sendSingleEmail: (storeId, data) => apiClient.post(`/email-marketing/send-email/${storeId}`, data),
   
@@ -183,6 +196,7 @@ export const emailMarketingApi = {
   deleteSuppressionGroup: (storeId, groupId) => apiClient.delete(`/email-marketing/suppression-groups/${storeId}/${groupId}`),
   syncSendgridData: (storeId) => apiClient.post(`/email-marketing/sync-sendgrid/${storeId}`),
   getChildCampaigns: (storeId, campaignId) => apiClient.get(`/email-marketing/campaigns/${storeId}/${campaignId}/children`),
+  getCampaignRunLogs: (storeId, campaignId) => apiClient.get(`/email-marketing/campaigns/${storeId}/${campaignId}/runs`),
   getCampaignsStats: (storeId, campaignIdsStr) => apiClient.get(`/email-marketing/campaigns/${storeId}/stats`, { params: { campaign_ids: campaignIdsStr } }),
   getDesigns: (storeId) => apiClient.get(`/email-marketing/designs/${storeId}`),
   getDesign: (storeId, designId) => apiClient.get(`/email-marketing/designs/${storeId}/${designId}`),

@@ -8,6 +8,7 @@ from app.models.recovered_cart import RecoveredCart
 from app.models.email_setting import EmailSetting
 from app.models.email_contact import EmailContact
 from app.models.email_campaign import EmailCampaign
+from app.models.email_campaign_run_log import EmailCampaignRunLog
 from app.models.email_tracking import EmailTrackingLog
 from app.models.customer_review import CustomerReview
 from app.models.email_campaign_contact import EmailCampaignContact
@@ -24,6 +25,7 @@ __all__ = [
     "EmailSetting",
     "EmailContact",
     "EmailCampaign",
+    "EmailCampaignRunLog",
     "EmailTrackingLog",
     "CustomerReview",
     "EmailCampaignContact",

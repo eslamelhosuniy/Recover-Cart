@@ -31,6 +31,7 @@ export default function EmailCampaigns() {
   const [showGroupModal, setShowGroupModal] = useState(false)
   const [showChildrenModal, setShowChildrenModal] = useState(false)
   const [childrenCampaigns, setChildrenCampaigns] = useState([])
+  const [campaignRunLogs, setCampaignRunLogs] = useState({})
   const [selectedDesignId, setSelectedDesignId] = useState('')
   const [showStatsModal, setShowStatsModal] = useState(false)
   const [selectedStats, setSelectedStats] = useState(null)
@@ -192,6 +193,37 @@ export default function EmailCampaigns() {
     }
   }
 
+  const runLiveCampaign = async (campaign) => {
+    const isWarmupFrozen = Boolean(campaign?.is_warmup || campaign?.status === 'warming_up' || campaign?.parent_id)
+    if (isWarmupFrozen) {
+      showNotification("لا يمكن تشغيل هذه الحملة مباشرة بينما هي في وضع الإحماء/التجميد", "warning")
+      return
+    }
+
+    setActionLoading(true)
+    try {
+      await emailMarketingApi.runLiveCampaign(activeStoreId, campaign.id)
+      showNotification("تم تشغيل الحملة مباشرة بنجاح", "success")
+      fetchData()
+    } catch(err) {
+      showNotification(err.response?.data?.detail || "فشل تشغيل الحملة مباشرة", "error")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const fetchCampaignRunLogs = async (campaignId) => {
+    if (!campaignId || campaignRunLogs[campaignId]) return
+    try {
+      const res = await emailMarketingApi.getCampaignRunLogs?.(activeStoreId, campaignId)
+      if (res?.data) {
+        setCampaignRunLogs(prev => ({ ...prev, [campaignId]: Array.isArray(res.data) ? res.data : [] }))
+      }
+    } catch (err) {
+      console.error('Failed to fetch campaign run logs', err)
+    }
+  }
+
   const viewChildCampaigns = async (campaignId) => {
     setActionLoading(true)
     try {
@@ -340,22 +372,44 @@ export default function EmailCampaigns() {
                       {new Date(c.created_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
                     </td>
                     <td style={{ padding: '1rem' }}>
-                      {c.is_warmup ? (
-                        <button className="btn btn-sm btn-secondary" onClick={() => viewChildCampaigns(c.id)}>
-                          <i className="fa-solid fa-list-ol"></i> الدفعات (الإحماء)
-                        </button>
-                      ) : (
-                        c.status === 'draft' ? (
-                          <div className="d-flex gap-2">
-                            <button className="btn btn-sm btn-secondary" onClick={() => openEditModal(c)}>تعديل</button>
-                            <button className="btn btn-sm btn-success" onClick={() => activateCampaign(c.id)}>تفعيل</button>
-                          </div>
-                        ) : (
-                          <button className="btn btn-sm btn-secondary" onClick={() => viewStats(c.sendgrid_campaign_id)}>
-                            <i className="fa-solid fa-chart-line"></i> الإحصائيات
+                      <div className="d-flex gap-2 flex-wrap">
+                        {(c.status === 'draft' || c.status === 'scheduled') && (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => c.is_warmup || c.status === 'warming_up' || c.parent_id ? showNotification('لا يمكن تشغيل هذه الحملة مباشرة بينما هي في وضع الإحماء/التجميد', 'warning') : runLiveCampaign(c)}
+                            disabled={actionLoading}
+                            style={{ borderColor: 'var(--primary)', color: 'var(--primary)', background: 'transparent' }}
+                          >
+                            <i className="fa-solid fa-play" /> تشغيل
                           </button>
-                        )
-                      )}
+                        )}
+
+                        {c.is_warmup ? (
+                          <button className="btn btn-sm btn-secondary" onClick={() => viewChildCampaigns(c.id)}>
+                            <i className="fa-solid fa-list-ol"></i> الدفعات (الإحماء)
+                          </button>
+                        ) : (
+                          c.status === 'draft' ? (
+                            <>
+                              <button className="btn btn-sm btn-secondary" onClick={() => openEditModal(c)}>تعديل</button>
+                              <button className="btn btn-sm btn-success" onClick={() => activateCampaign(c.id)}>تفعيل</button>
+                            </>
+                          ) : (
+                            <button className="btn btn-sm btn-secondary" onClick={() => viewStats(c.sendgrid_campaign_id)}>
+                              <i className="fa-solid fa-chart-line"></i> الإحصائيات
+                            </button>
+                          )
+                        )}
+                      </div>
+                      <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        <div>الوقت القادم: {c.scheduled_at ? new Date(c.scheduled_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</div>
+                        <div
+                          onMouseEnter={() => fetchCampaignRunLogs(c.id)}
+                          style={{ marginTop: '0.25rem', color: 'var(--primary)', cursor: 'pointer' }}
+                        >
+                          <i className="fa-solid fa-history" /> آخر تشغيل: {campaignRunLogs[c.id]?.[0]?.triggered_at ? new Date(campaignRunLogs[c.id][0].triggered_at).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : 'لا يوجد سجل بعد'}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))}

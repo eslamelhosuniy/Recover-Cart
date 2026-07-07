@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from app.repositories.email_setting_repo import EmailSettingRepository
 from app.repositories.email_contact_repo import EmailContactRepository
-from app.repositories.email_campaign_repo import EmailCampaignRepository
+from app.repositories.email_campaign_repo import EmailCampaignRepository, EmailCampaignRunLogRepository
 from app.services.sendgrid_client import SendGridClient
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ class EmailMarketingService:
         self.setting_repo = EmailSettingRepository()
         self.contact_repo = EmailContactRepository()
         self.campaign_repo = EmailCampaignRepository()
+        self.run_log_repo = EmailCampaignRunLogRepository()
 
     async def get_senders(self, db: AsyncSession, store_id: str):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
@@ -348,6 +349,38 @@ class EmailMarketingService:
             if all_sent and children:
                 await self.campaign_repo.update(db, w, {"status": "sent"})
 
+    async def run_live_campaign(self, db: AsyncSession, store_id: str, campaign_id: str):
+        campaign = await self.campaign_repo.get_by_id(db, campaign_id)
+        if not campaign or str(campaign.store_id) != str(store_id):
+            raise ValueError("Campaign not found or does not belong to this store.")
+
+        if campaign.is_warmup or campaign.status == "warming_up" or campaign.parent_id is not None:
+            raise ValueError("Cannot run this campaign live while it is in warm-up freeze.")
+
+        if campaign.status not in {"draft", "scheduled"}:
+            raise ValueError(f"This campaign cannot be scheduled again because its current status is '{campaign.status}'. Only draft or scheduled campaigns can be run.")
+
+        result = await self.schedule_campaign(db, store_id, campaign_id)
+        await self._log_campaign_run(db, store_id, campaign_id, "manual_run", "completed", "Campaign started live", {"scheduled_at": getattr(campaign, "scheduled_at", None).isoformat() if getattr(campaign, "scheduled_at", None) else None})
+        return result
+
+    async def _log_campaign_run(self, db: AsyncSession, store_id: str, campaign_id: str, event_type: str, status: str, message: str, details: dict | None = None):
+        import json
+        await self.run_log_repo.create(db, {
+            "store_id": store_id,
+            "campaign_id": campaign_id,
+            "event_type": event_type,
+            "status": status,
+            "message": message,
+            "details": json.dumps(details) if details is not None else None,
+        })
+
+    async def get_campaign_run_logs(self, db: AsyncSession, store_id: str, campaign_id: str):
+        campaign = await self.campaign_repo.get_by_id(db, campaign_id)
+        if not campaign or str(campaign.store_id) != str(store_id):
+            raise ValueError("Campaign not found or does not belong to this store.")
+        return await self.run_log_repo.get_by_campaign_id(db, campaign_id)
+
     async def schedule_campaign(self, db: AsyncSession, store_id: str, campaign_id: str):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
         if not settings or not settings.sendgrid_api_key:
@@ -358,6 +391,9 @@ class EmailMarketingService:
             raise ValueError("Campaign not found or does not belong to this store.")
 
         client = SendGridClient(settings.sendgrid_api_key)
+
+        if campaign.status not in {"draft", "scheduled"}:
+            raise ValueError(f"This campaign cannot be scheduled because its current status is '{campaign.status}'. Only draft or scheduled campaigns can be run.")
 
         if campaign.is_warmup:
             sg_camp = await client.get_single_send(campaign.sendgrid_campaign_id)
@@ -401,15 +437,16 @@ class EmailMarketingService:
                 day_idx += 1
                 
             import datetime
+            first_scheduled_at = None
             for idx, chunk in enumerate(chunks):
                 day = idx + 1
                 new_list_name = f"{campaign.name} - Warmup Day {day}"
                 new_list = await client.create_list(new_list_name)
                 new_list_id = new_list.get("id")
-                
+
                 sg_contacts = [{"email": c.email, "first_name": c.first_name, "last_name": c.last_name} for c in chunk]
                 await client.add_or_update_contacts(new_list_id, sg_contacts)
-                
+
                 sub_camp = await client.create_single_send(
                     name=f"{campaign.name} - Day {day}",
                     subject=email_config.get("subject"),
@@ -419,11 +456,13 @@ class EmailMarketingService:
                     custom_unsubscribe_url=email_config.get("custom_unsubscribe_url"),
                     html_content=email_config.get("html_content", "")
                 )
-                
+
                 send_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=idx)
+                if idx == 0:
+                    first_scheduled_at = send_time
                 send_time_str = send_time.strftime("%Y-%m-%dT%H:%M:%SZ") if idx > 0 else "now"
                 await client.schedule_single_send(sub_camp.get("id"), send_time_str)
-                
+
                 child_data = {
                     "store_id": store_id,
                     "sendgrid_campaign_id": sub_camp.get("id"),
@@ -435,11 +474,19 @@ class EmailMarketingService:
                     "scheduled_at": send_time
                 }
                 await self.campaign_repo.create(db, child_data)
-                
-            return await self.campaign_repo.update(db, campaign, {"status": "scheduled"})
+
+            updated_campaign = await self.campaign_repo.update(db, campaign, {"status": "scheduled", "scheduled_at": first_scheduled_at})
+            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Warmup campaign scheduled", {"status": updated_campaign.status, "scheduled_at": updated_campaign.scheduled_at.isoformat() if updated_campaign.scheduled_at else None})
+            return updated_campaign
         else:
             await client.schedule_single_send(campaign.sendgrid_campaign_id)
-            return await self.campaign_repo.update(db, campaign, {"status": "scheduled"})
+            import datetime
+            updated_campaign = await self.campaign_repo.update(db, campaign, {
+                "status": "scheduled",
+                "scheduled_at": datetime.datetime.now(datetime.timezone.utc)
+            })
+            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Campaign scheduled for sending", {"status": updated_campaign.status, "scheduled_at": updated_campaign.scheduled_at.isoformat() if updated_campaign.scheduled_at else None})
+            return updated_campaign
 
     async def get_campaign_stats(self, db: AsyncSession, store_id: str, campaign_ids: list[str] = None):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
