@@ -493,11 +493,12 @@ export default function Appointments() {
 
         {/* Pagination */}
         {total > limit && (
-          <div style={{ padding: '1rem' }}>
+          <div style={{ padding: '1.25rem 1rem', display: 'flex', justifyContent: 'center' }}>
             <Pagination
-              currentPage={page}
-              totalItems={total}
-              pageSize={limit}
+              page={page}
+              totalPages={Math.ceil(total / limit)}
+              total={total}
+              limit={limit}
               onPageChange={handlePageChange}
             />
           </div>
