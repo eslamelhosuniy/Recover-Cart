@@ -19,6 +19,14 @@ class StoreBase(BaseModel):
     review_request_enabled: bool = True
     review_request_delay_hours: int = 24
     review_request_template_name: str = "review_request"
+    
+    # GoHighLevel / Calendar Automation Settings
+    ghl_automation_enabled: bool = True
+    ghl_instant_reminder_enabled: bool = True
+    ghl_reminder_hours_before: int = 1
+    ghl_reminder_template_name: str = "appointment_reminder"
+    ghl_confirmation_template_name: str = "appointment_confirmation"
+
     is_active: bool = True
 
 class StoreCreate(StoreBase):
@@ -40,6 +48,13 @@ class StoreUpdate(BaseModel):
     review_request_enabled: Optional[bool] = None
     review_request_delay_hours: Optional[int] = None
     review_request_template_name: Optional[str] = None
+    
+    ghl_automation_enabled: Optional[bool] = None
+    ghl_instant_reminder_enabled: Optional[bool] = None
+    ghl_reminder_hours_before: Optional[int] = None
+    ghl_reminder_template_name: Optional[str] = None
+    ghl_confirmation_template_name: Optional[str] = None
+    
     is_active: Optional[bool] = None
 
 class StoreResponse(StoreBase):

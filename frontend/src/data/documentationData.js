@@ -345,6 +345,94 @@ export const documentationData = {
           'قم بإنشاء سلة متروكة واختبرها',
           'تحقق من استقبال البيانات في Recover'
         ]
+      },
+      {
+        id: 'gohighlevel-calendar',
+        title: 'أتمتة مواعيد GoHighLevel',
+        description: 'شرح شامل لربط تقاويم ومواعيد GoHighLevel عبر Webhook وأتمتة رسائل التأكيد الفورية والتذكيرات عبر واتساب',
+        icon: 'fa-calendar-check',
+        color: '#6366F1',
+        steps: [
+          {
+            number: 1,
+            title: 'نسخ رابط Webhook من Recover',
+            description: 'ادخل إلى صفحة "حجوزات الكاليندر (GHL)" أو "الإعدادات" في Recover وقم بنسخ رابط Webhook الخاص بمتجرك'
+          },
+          {
+            number: 2,
+            title: 'الوصول إلى سير العمل في GoHighLevel',
+            description: 'قم بتسجيل الدخول إلى حسابك في GoHighLevel ثم انتقل إلى Automation > Workflows من القائمة الجانبية'
+          },
+          {
+            number: 3,
+            title: 'إنشاء سير عمل جديد',
+            description: 'اضغط على "Create Workflow" ثم اختر "Start from Scratch" أو قم بتعديل سير العمل الحالي الخاص بحجز المواعيد'
+          },
+          {
+            number: 4,
+            title: 'تحديد المشغّل (Trigger)',
+            description: 'أضف مشغّل جديد واختر نوعه: "Customer Booked Appointment" أو "Appointment Status" وحدد التقويم المطلوب'
+          },
+          {
+            number: 5,
+            title: 'إضافة إجراء Custom Webhook',
+            description: 'أضف إجراء جديد (Action) وابحث عن "Custom Webhook" ثم اضغط عليه'
+          },
+          {
+            number: 6,
+            title: 'تكوين الـ Webhook',
+            description: 'اختر Method كـ POST، والصق رابط الـ Webhook المنسوخ من Recover في خانة URL'
+          },
+          {
+            number: 7,
+            title: 'نشر وتفعيل سير العمل',
+            description: 'قم بتغيير حالة سير العمل في الأعلى من Draft إلى Publish ثم اضغط Save لحفظ وتفعيل الأتمتة'
+          },
+          {
+            number: 8,
+            title: 'تخصيص وقت وقوالب التذكير في Recover',
+            description: 'انتقل إلى إعدادات المتجر في Recover وحدد وقت التذكير بالساعات (افتراضياً 1 ساعة قبل الموعد) وأسماء قوالب الواتساب المعتمدة'
+          }
+        ],
+        prerequisites: [
+          'حساب GoHighLevel نشط وصلاحيات إدارة سير العمل (Workflows)',
+          'تقويم مواعيد (Calendar) مفعل في GoHighLevel',
+          'حساب واتساب بيزنس مفعّل ومتصل بـ Recover',
+          'قوالب واتساب معتمدة في Meta (تأكيد الموعد والتذكير)'
+        ],
+        troubleshooting: [
+          {
+            issue: 'المواعيد لا تظهر في لوحة Recover بعد الحجز',
+            solution: 'تأكد من أن الـ Workflow في GoHighLevel في وضع Publish وليس Draft، وتأكد من أن رابط الـ Webhook يحتوي على store_id الخاص بمتجرك'
+          },
+          {
+            issue: 'رسائل التذكير الفورية لا تصل للعميل',
+            solution: 'تأكد من تفعيل خيار "تأكيد الحجز الفوري" في إعدادات Recover وتأكد من صحة اسم القالب في Meta وصلاحية Access Token'
+          },
+          {
+            issue: 'رسالة التذكير قبل الموعد لم تُرسل',
+            solution: 'فحص التذكيرات يتم تلقائياً كل 5 دقائق لمطابقة المواعيد المتبقي عليها وقت التذكير المحدد، تأكد من عدم إلغاء الموعد'
+          }
+        ],
+        faq: [
+          {
+            question: 'ما هي المتغيرات المدعومة في قالب الواتساب للمواعيد؟',
+            answer: 'يدعم النظام تمرير: اسم العميل {{name}}، اسم التقويم {{calendar_name}}، تاريخ الموعد {{date}}، توقيت الموعد {{time}}، ورابط الاجتماع {{link}}'
+          },
+          {
+            question: 'هل يمكنني إرسال تذكير يدوي في أي وقت؟',
+            answer: 'نعم، يمكنك الضغط على زر "إرسال تذكير الآن" بجانب أي موعد في جدول المواعيد ليتم إرسال التذكير فوراً'
+          },
+          {
+            question: 'ماذا يحدث إذا تم إلغاء الموعد في GoHighLevel؟',
+            answer: 'عند وصول إشعار الإلغاء، يتم تحديث حالة الموعد إلى ملغي وإلغاء إرسال أي تذكيرات مجدولة تلقائياً'
+          }
+        ],
+        verification: [
+          'قم بحجز موعد تجريبي في تقويم GoHighLevel',
+          'تحقق من وصول بيانات الموعد فوراً إلى صفحة حجوزات الكاليندر في Recover',
+          'تحقق من استقبال رسالة تأكيد الحجز على رقم الواتساب المسجل'
+        ]
       }
     ]
   },
@@ -693,6 +781,94 @@ export const documentationData = {
           'Verify webhook appears in events list',
           'Create a test abandoned cart',
           'Confirm data is received in Recover'
+        ]
+      },
+      {
+        id: 'gohighlevel-calendar',
+        title: 'GoHighLevel Calendar Automation',
+        description: 'Comprehensive guide to integrate GoHighLevel calendar bookings via Webhook and automate instant confirmations and scheduled WhatsApp reminders',
+        icon: 'fa-calendar-check',
+        color: '#6366F1',
+        steps: [
+          {
+            number: 1,
+            title: 'Copy Webhook URL from Recover',
+            description: 'Navigate to "Calendar Bookings (GHL)" or "Settings" page in Recover and copy your store\'s unique Webhook URL'
+          },
+          {
+            number: 2,
+            title: 'Access GoHighLevel Workflows',
+            description: 'Log into your GoHighLevel account and go to Automation > Workflows from the sidebar'
+          },
+          {
+            number: 3,
+            title: 'Create a New Workflow',
+            description: 'Click "Create Workflow" and select "Start from Scratch" or edit an existing appointment booking workflow'
+          },
+          {
+            number: 4,
+            title: 'Set Workflow Trigger',
+            description: 'Add a new trigger: choose "Customer Booked Appointment" or "Appointment Status" and select the desired calendar'
+          },
+          {
+            number: 5,
+            title: 'Add Custom Webhook Action',
+            description: 'Add a new Action, search for "Custom Webhook" and select it'
+          },
+          {
+            number: 6,
+            title: 'Configure Webhook Endpoint',
+            description: 'Set Method to POST and paste the copied Recover Webhook URL into the URL field'
+          },
+          {
+            number: 7,
+            title: 'Publish and Save Workflow',
+            description: 'Switch the workflow state from Draft to Publish and click Save to activate the automation'
+          },
+          {
+            number: 8,
+            title: 'Configure Reminder Settings in Recover',
+            description: 'Go to store Settings in Recover to customize reminder hours before appointment (default 1 hour) and template names'
+          }
+        ],
+        prerequisites: [
+          'Active GoHighLevel account with workflow management permissions',
+          'Active appointment calendar configured in GoHighLevel',
+          'Active WhatsApp Business account connected to Recover',
+          'Approved WhatsApp message templates in Meta Developer Dashboard'
+        ],
+        troubleshooting: [
+          {
+            issue: 'Appointments do not appear in Recover dashboard',
+            solution: 'Verify the workflow is Published in GoHighLevel and that the webhook URL includes your active store_id'
+          },
+          {
+            issue: 'Instant confirmation messages are not delivered',
+            solution: 'Ensure "Instant Confirmation" is enabled in Recover settings and that Meta WhatsApp access token is valid'
+          },
+          {
+            issue: 'Scheduled pre-appointment reminder not sent',
+            solution: 'Scheduler worker runs every 5 minutes to process due reminders. Verify the appointment is not cancelled'
+          }
+        ],
+        faq: [
+          {
+            question: 'What dynamic parameters are supported in appointment templates?',
+            answer: 'Supports {{name}} (Customer Name), {{calendar_name}} (Calendar/Service Name), {{date}} (Appointment Date), {{time}} (Appointment Time), and {{link}} (Google Meet / Meeting URL)'
+          },
+          {
+            question: 'Can I send a manual WhatsApp reminder on demand?',
+            answer: 'Yes, click the "Send Reminder Now" button next to any appointment in the table to trigger an immediate WhatsApp reminder'
+          },
+          {
+            question: 'What happens if an appointment is cancelled in GoHighLevel?',
+            answer: 'When a cancellation event is received, the appointment status updates to cancelled and pending scheduled reminders are automatically stopped'
+          }
+        ],
+        verification: [
+          'Book a test appointment through your GoHighLevel booking widget',
+          'Check that the booking appears immediately in Recover Calendar Bookings table',
+          'Verify instant WhatsApp confirmation is received on the customer phone number'
         ]
       }
     ]

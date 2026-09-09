@@ -10,7 +10,8 @@ class MessageLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id"), nullable=False)
-    cart_id = Column(UUID(as_uuid=True), ForeignKey("abandoned_carts.id"), nullable=False)
+    cart_id = Column(UUID(as_uuid=True), ForeignKey("abandoned_carts.id"), nullable=True)
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointments.id"), nullable=True)
     whatsapp_msg_id = Column(String, nullable=True)
     status = Column(String, default="pending", nullable=False)
     channel = Column(String, default="whatsapp", nullable=False)
@@ -20,4 +21,5 @@ class MessageLog(Base):
     error_message = Column(Text, nullable=True)
 
     cart = relationship("AbandonedCart", back_populates="messages")
+    appointment = relationship("Appointment", backref="messages")
 

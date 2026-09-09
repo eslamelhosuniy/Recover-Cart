@@ -11,6 +11,7 @@ export default function Settings() {
   const origin = window.location.origin
   const sallaWebhookUrl = `${origin}/api/v1/webhooks/salla?store_id=${activeStoreId}`
   const whatsappWebhookUrl = `${origin}/api/v1/webhooks/whatsapp?store_id=${activeStoreId}`
+  const ghlWebhookUrl = `${origin}/api/v1/webhooks/ghl?store_id=${activeStoreId}`
 
   const [formData, setFormData] = useState({
     salla_webhook_secret: '',
@@ -24,6 +25,11 @@ export default function Settings() {
     review_request_template_name: 'review_request',
     review_request_delay_hours: 24,
     reminder_image_url: '',
+    ghl_automation_enabled: true,
+    ghl_instant_reminder_enabled: true,
+    ghl_reminder_hours_before: 15,
+    ghl_reminder_template_name: 'appointment_reminder',
+    ghl_confirmation_template_name: 'appointment_confirmation',
   })
   
   const [emailData, setEmailData] = useState({
@@ -668,6 +674,137 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* GoHighLevel Calendar Automation Card */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 25, 37, 0.7) 0%, rgba(15, 17, 26, 0.8) 100%)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+              }}
+            >
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#6366f1', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <i className="fa-solid fa-calendar-check" />
+                إعدادات أتمتة مواعيد GoHighLevel
+              </h3>
+
+              <div className="form-group mb-3">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    اسم قالب تأكيد الحجز الفوري (Confirmation Template)
+                  </label>
+                  <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', fontWeight: 600 }}>
+                    Meta Category: Marketing
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  name="ghl_confirmation_template_name"
+                  className="form-input"
+                  value={formData.ghl_confirmation_template_name || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="مثال: appointment_confirmation"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                  يُرسل فوراً عند حجز الموعد. المتغيرات المعتمدة في Meta: {'{{1}}'} التاريخ، {'{{2}}'} الوقت.
+                </span>
+              </div>
+
+              <div className="form-group mb-3">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                    اسم قالب تذكير الموعد (Reminder Template)
+                  </label>
+                  <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', fontWeight: 600 }}>
+                    Meta Category: Marketing
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  name="ghl_reminder_template_name"
+                  className="form-input"
+                  value={formData.ghl_reminder_template_name || ''}
+                  onChange={handleChange}
+                  dir="ltr"
+                  placeholder="مثال: appointment_reminder"
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
+                />
+                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                  يُرسل قبل الموعد بـ 15 دقيقة تلقائياً. المتغير المعتمد في Meta: {'{{1}}'} رابط الاجتماع.
+                </span>
+              </div>
+
+              <div className="form-group mb-3">
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                  توقيت إرسال التذكير التلقائي قبل الموعد
+                </label>
+                <select
+                  name="ghl_reminder_hours_before"
+                  className="form-input"
+                  value={formData.ghl_reminder_hours_before ?? 15}
+                  onChange={handleChange}
+                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value={15}>⏱️ قبل الموعد بـ 15 دقيقة (ربع ساعة - متطابق مع قالب تشخيص النمو)</option>
+                  <option value={30}>⏱️ قبل الموعد بـ 30 دقيقة (نصف ساعة)</option>
+                  <option value={60}>⏱️ قبل الموعد بـ 1 ساعة</option>
+                  <option value={120}>⏱️ قبل الموعد بـ ساعتين</option>
+                  <option value={1440}>⏱️ قبل الموعد بـ 24 ساعة (يوم كامل)</option>
+                </select>
+                <span className="text-muted text-small mt-1 d-block" style={{ fontSize: '0.75rem' }}>
+                  يتم إرسال رسالة التذكير آلياً للعميل قبل موعد المكالمة بالمدة المحددة أعلاه.
+                </span>
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تأكيد الحجز الفوري</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                      إرسال رسالة تأكيد واتساب مباشرة عند إتمام العميل للحجز.
+                    </div>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="ghl_instant_reminder_enabled"
+                      name="ghl_instant_reminder_enabled"
+                      className="toggle-input"
+                      checked={formData.ghl_instant_reminder_enabled}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="ghl_instant_reminder_enabled" className="toggle-label"></label>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل أتمتة مواعيد GoHighLevel</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.18rem' }}>
+                      تفعيل استقبال حجوزات الكاليندر وجدولة التذكيرات التلقائية.
+                    </div>
+                  </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="ghl_automation_enabled"
+                      name="ghl_automation_enabled"
+                      className="toggle-input"
+                      checked={formData.ghl_automation_enabled}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="ghl_automation_enabled" className="toggle-label"></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* Column 2: Webhooks & Operational Controls */}
@@ -727,7 +864,7 @@ export default function Settings() {
               </div>
 
               {/* WhatsApp Webhook Info */}
-              <div style={{ marginBottom: 0 }}>
+              <div style={{ marginBottom: '1.25rem' }}>
                 <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                   رابط ويبهوك واتساب (WhatsApp Webhook URL)
                 </label>
@@ -755,6 +892,43 @@ export default function Settings() {
                     onClick={() => {
                       navigator.clipboard.writeText(whatsappWebhookUrl)
                       showNotification('تم نسخ رابط ويبهوك واتساب بنجاح', 'success')
+                    }}
+                  >
+                    <i className="fa-regular fa-copy" />
+                    نسخ
+                  </button>
+                </div>
+              </div>
+
+              {/* GoHighLevel Webhook Info */}
+              <div style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  رابط ويبهوك GoHighLevel (GHL Webhook URL)
+                </label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    readOnly
+                    className="form-input"
+                    value={ghlWebhookUrl}
+                    dir="ltr"
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'rgba(0,0,0,0.2)',
+                      color: 'var(--text-muted)',
+                      height: '36px',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
+                      border: '1px solid var(--border)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ height: '36px', borderRadius: '6px', padding: '0 0.8rem', fontSize: '0.78rem' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(ghlWebhookUrl)
+                      showNotification('تم نسخ رابط ويبهوك GoHighLevel بنجاح', 'success')
                     }}
                   >
                     <i className="fa-regular fa-copy" />

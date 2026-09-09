@@ -51,21 +51,10 @@ async def create_store(
                 detail="هذا المتجر مسجل بالفعل في النظام."
             )
 
+    store_data = payload.model_dump()
     new_store = Store(
         owner_id=current_user.id,
-        store_name=payload.store_name,
-        salla_store_id=payload.salla_store_id,
-        salla_webhook_secret=payload.salla_webhook_secret,
-        whatsapp_phone_id=payload.whatsapp_phone_id,
-        whatsapp_access_token=payload.whatsapp_access_token,
-        whatsapp_webhook_verify_token=payload.whatsapp_webhook_verify_token,
-        whatsapp_template_name=payload.whatsapp_template_name,
-        coupon_code=payload.coupon_code,
-        reminder_image_url=payload.reminder_image_url,
-        automation_enabled=payload.automation_enabled,
-        reminder_delay_hours=payload.reminder_delay_hours,
-        max_retries=payload.max_retries,
-        is_active=payload.is_active
+        **store_data
     )
     
     db.add(new_store)
@@ -123,10 +112,9 @@ async def delete_store(
             detail="صلاحية حذف المتجر متاحة للمشرفين فقط."
         )
         
-    store = await store_repo.get_by_id(db, id)
-    if not store:
+    deleted = await store_repo.delete_store_cascade(db, id)
+    if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="المتجر غير موجود.")
         
-    await db.delete(store)
-    await db.commit()
-    return {"status": "success", "message": "تم حذف المتجر بنجاح."}
+    return {"status": "success", "message": "تم حذف المتجر وجميع بياناته بنجاح."}
+

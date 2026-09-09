@@ -2,7 +2,7 @@
 name = "recover-cart"
 version = "0.1.0"
 description = "Automated abandoned cart recovery system"
-requires-python = "==3.11"
+requires-python = ">=3.11, <3.12"
 dependencies = [
     "fastapi[standard]==0.115.0",
     "uvicorn[standard]==0.30.0",
@@ -22,3 +22,9 @@ dependencies = [
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = ["tests*", "alembic*", "frontend_dist*", "images*"]
+

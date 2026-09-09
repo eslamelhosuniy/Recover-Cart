@@ -11,6 +11,8 @@ env.bak/
 venv.bak/
 node_modules/
 recover/
+*.egg-info/
+backend/*.egg-info/
 
 # IDEs
 .vscode/

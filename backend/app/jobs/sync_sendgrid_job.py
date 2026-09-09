@@ -7,7 +7,7 @@ from app.models.email_contact import EmailContact
 from app.models.email_campaign_contact import EmailCampaignContact
 from app.repositories.email_setting_repo import EmailSettingRepository
 from app.services.sendgrid_client import SendGridClient
-from app.core.database import async_session_maker
+from app.core.database import AsyncSessionLocal
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ async def run_sync_sendgrid_job():
     """
     logger.info("Starting background SendGrid Sync Job")
     
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         stores = await db.execute(select(Store))
         for store in stores.scalars().all():
             try:

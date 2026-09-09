@@ -22,6 +22,7 @@ import EmailLists from './pages/EmailLists'
 import EmailDesigns from './pages/EmailDesigns'
 import EmailSuppressionGroups from './pages/EmailSuppressionGroups'
 import EmailValidation from './pages/EmailValidation'
+import Appointments from './pages/Appointments'
 import DocumentationHome from './pages/DocumentationHome'
 import DocumentationSection from './pages/DocumentationSection'
 
@@ -50,6 +51,7 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="stores" element={<Stores />} />
                 <Route path="admin-stores" element={<AdminStores />} />
+                <Route path="appointments" element={<Appointments />} />
                 <Route path="carts" element={<Carts />} />
                 <Route path="carts/recovered" element={<RecoveredCarts />} />
                 <Route path="messages" element={<Messages />} />

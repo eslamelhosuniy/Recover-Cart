@@ -229,4 +229,21 @@ export const emailValidationApi = {
   validateSingle: (contactId) => apiClient.post(`/email-validation/validate/${contactId}`),
 }
 
+// ── GoHighLevel Appointments ────────────────────────────────
+export const appointmentsApi = {
+  list: (skip = 0, limit = 10, status = '', search = '', startDate = '', endDate = '') => {
+    let url = `/appointments?skip=${skip}&limit=${limit}`
+    if (status) url += `&status=${encodeURIComponent(status)}`
+    if (search) url += `&search=${encodeURIComponent(search)}`
+    if (startDate) url += `&start_date=${startDate}`
+    if (endDate) url += `&end_date=${endDate}`
+    return apiClient.get(url)
+  },
+  stats: () => apiClient.get('/appointments/stats'),
+  get: (id) => apiClient.get(`/appointments/${id}`),
+  sendReminder: (id, data = {}) => apiClient.post(`/appointments/${id}/send-reminder`, data),
+  sendConfirmation: (id) => apiClient.post(`/appointments/${id}/send-confirmation`),
+  delete: (id) => apiClient.delete(`/appointments/${id}`),
+}
+
 export default apiClient

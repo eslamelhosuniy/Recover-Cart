@@ -26,6 +26,14 @@ class Store(Base):
     review_request_delay_hours = Column(Integer, default=24, nullable=False)
     review_request_template_name = Column(String, nullable=False, default="review_request")
     reminder_image_url = Column(String, nullable=True)
+    
+    # GoHighLevel / Calendar Automation Settings
+    ghl_automation_enabled = Column(Boolean, default=True, nullable=False)
+    ghl_instant_reminder_enabled = Column(Boolean, default=True, nullable=False)
+    ghl_reminder_hours_before = Column(Integer, default=1, nullable=False)
+    ghl_reminder_template_name = Column(String, nullable=False, default="appointment_reminder")
+    ghl_confirmation_template_name = Column(String, nullable=False, default="appointment_confirmation")
+
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
@@ -40,4 +48,5 @@ class Store(Base):
     message_logs = relationship("MessageLog", backref="store", cascade="all, delete-orphan")
     recovered_carts = relationship("RecoveredCart", backref="store", cascade="all, delete-orphan")
     reviews = relationship("CustomerReview", back_populates="store", cascade="all, delete-orphan")
+    appointments = relationship("Appointment", back_populates="store", cascade="all, delete-orphan")
 

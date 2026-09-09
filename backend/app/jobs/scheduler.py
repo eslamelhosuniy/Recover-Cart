@@ -11,6 +11,7 @@ scheduler = AsyncIOScheduler()
 
 from app.jobs.email_validation_job import run_email_validation_job
 from app.jobs.sync_sendgrid_job import run_sync_sendgrid_job
+from app.jobs.appointment_reminder_job import run_appointment_reminder_job
 
 def start_scheduler():
     if not scheduler.running:
@@ -51,9 +52,17 @@ def start_scheduler():
             replace_existing=True
         )
 
+        # GoHighLevel Appointment Reminders job (every 5 minutes)
+        scheduler.add_job(
+            run_appointment_reminder_job,
+            trigger=IntervalTrigger(minutes=5),
+            id="appointment_reminder_job",
+            name="Send GoHighLevel appointment reminders",
+            replace_existing=True
+        )
         
         scheduler.start()
-        logger.info(f"APScheduler started. Reminder job every {reminder_interval}m, Review job every 60m, Validation job every 5m.")
+        logger.info(f"APScheduler started. Reminder job every {reminder_interval}m, Review job every 60m, Validation job every 5m, Appointment job every 5m.")
 
 def shutdown_scheduler():
     if scheduler.running:

@@ -100,6 +100,16 @@ export default function Sidebar({ isOpen, onClose }) {
             <span>المتاجر</span>
           </NavLink>
 
+          {/* GoHighLevel Calendar Appointments item */}
+          <NavLink
+            to="/appointments"
+            className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+            onClick={onClose}
+          >
+            <i className="fa-solid fa-calendar-check nav-icon" />
+            <span>حجوزات الكاليندر (GHL)</span>
+          </NavLink>
+
           {/* Carts Dropdown Trigger */}
           <button
             type="button"

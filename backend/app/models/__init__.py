@@ -13,6 +13,7 @@ from app.models.email_tracking import EmailTrackingLog
 from app.models.customer_review import CustomerReview
 from app.models.email_campaign_contact import EmailCampaignContact
 from app.models.sendgrid_data import SendgridList, SendgridSender, SendgridSuppressionGroup
+from app.models.appointment import Appointment
 
 __all__ = [
     "Base",
@@ -31,5 +32,6 @@ __all__ = [
     "EmailCampaignContact",
     "SendgridList",
     "SendgridSender",
-    "SendgridSuppressionGroup"
+    "SendgridSuppressionGroup",
+    "Appointment"
 ]

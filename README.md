@@ -1,66 +1,108 @@
-# 🛒 Recover - Automated Abandoned Cart Recovery SaaS
+# 🛒 Recover - E-Commerce & Calendar Booking Automation Platform
 
-نظام متكامل مبني لمتجرك على منصة "سلة" للتعامل مع السلات المهجورة واسترجاعها تلقائياً عبر إرسال رسائل وتس اب (WhatsApp Business API). تم بناء النظام باستخدام معمارية نظيفة (Clean Architecture) لضمان الأداء العالي وقابلية التوسع.
+منصة أتمتة متكاملة وذكية لاسترجاع السلات المهجورة وأتمتة حجوزات وتذكيرات المواعيد عبر واتساب (WhatsApp Business API) والتكامل مع منصات التجارة الإلكترونية مثل **سلة (Salla)** وأنظمة إدارة العملاء والمواعيد مثل **GoHighLevel (GHL)**.
 
-## ✨ المميزات (Features)
-- 🚀 **استقبال فوري (Webhooks):** استقبال إشعارات السلات المهجورة من سلة في الوقت الفعلي.
-- 🔐 **أمان عالي:** التحقق من التوقيع الرقمي (HMAC SHA256) لضمان مصدر البيانات.
-- 🤖 **نظام تذكير تلقائي (Jobs):** فحص دوري للسلات المهجورة وإرسال رسائل مخصصة عبر واتساب بعد مرور وقت محدد.
-- 📊 **لوحة تحكم تفاعلية (Dashboard):** واجهة مستخدم حديثة لمتابعة الأرباح المسترجعة ونسبة الاسترجاع لحظياً.
-- 🏗️ **معماريات برمجية احترافية:** MVC + Repository Pattern.
+---
+
+## ✨ المميزات الرئيسية (Features)
+
+### 📅 1. أتمتة مواعيد GoHighLevel (GHL Calendar Automation)
+- 🚀 **استقبال فوري عبر الـ Webhook:** استقبال بيانات الحجوزات والمواعيد والعملاء من تقاويم GoHighLevel في الوقت الفعلي.
+- 💬 **تأكيد فوري عبر واتساب:** إرسال رسالة تأكيد/تذكير فورية للعميل بمجرد إتمام الحجز بالاسم والتاريخ والوقت ورابط الاجتماع (Google Meet).
+- ⏰ **تذكيرات ذكية مجدولة قبل الموعد:** فحص دوري مجدول كل 5 دقائق لإرسال رسالة تذكيرية للعميل قبل موعده (مثلاً قبل الموعد بـ 1 ساعة أو حسب الإعدادات).
+- 🔘 **إرسال تذكير يدوي فوري من الواجهة (Manual Trigger):** إمكانية إرسال تذكير واتساب لأي عميل بضغطة زر واحدة من لوحة التحكم.
+- 🔄 **إدارة دورة حياة الموعد:** تحديث المواعيد تلقائياً عند إعادة الجدولة أو الإلغاء في GoHighLevel وإيقاف التذكيرات المعلقة.
+
+### 🛒 2. استرجاع السلات المهجورة (Salla Cart Recovery)
+- 🛒 **استقبال فوري من سلة:** تتبع السلات المتروكة والعملاء وقيمة السلة ورابط إكمال الدفع.
+- 🤖 **تذكيرات آلية:** إرسال رسائل تذكيرية بالسلة مع كوبونات خصم وصورة مخصصة.
+- ⭐️ **طلبات التقييم:** أتمتة طلب تقييمات العملاء بعد استرجاع السلة بنجاح.
+
+### ✉️ 3. التسويق عبر البريد الإلكتروني (Email Marketing & Validation)
+- 📧 **تكامل SendGrid:** إدارة قوائم الاتصال، الحملات الإعلانية، والتصاميم.
+- 🔍 **فحص الإيميلات:** التحقق من صحة البريد الإلكتروني (MX, SMTP, Syntax).
+
+---
 
 ## 🛠️ التقنيات المستخدمة (Tech Stack)
-- **Backend:** FastAPI, Python, SQLAlchemy (Async), PostgreSQL, APScheduler.
-- **Frontend:** HTML5, CSS3 (Glassmorphism), Vanilla JavaScript.
-- **Database Migrations:** Alembic.
+
+- **Backend:** FastAPI, Python, SQLAlchemy (Async), PostgreSQL, APScheduler, Alembic.
+- **Frontend:** React, Vite, React Router, Modern CSS & UI Components.
+- **Integrations:** Meta WhatsApp Cloud API, GoHighLevel Webhooks, Salla Webhooks, SendGrid API.
+
+---
+
+## 🚀 واجهات الـ Webhooks البرمجية (Webhook Endpoints)
+
+| الخدمة | المسار (Endpoint) | الطريقة | الوصف |
+| :--- | :--- | :--- | :--- |
+| **GoHighLevel** | `/api/v1/webhooks/ghl?store_id={STORE_ID}` | `POST` | استقبال حجوزات المواعيد وأتمتة التذكيرات |
+| **Salla** | `/api/v1/webhooks/salla?store_id={STORE_ID}` | `POST` | استقبال أحداث السلات المتروكة والتقييمات |
+| **WhatsApp** | `/api/v1/webhooks/whatsapp?store_id={STORE_ID}` | `POST / GET` | استقبال تحديثات حالة تسليم وقراءة الرسائل |
+
+---
+
+## 📅 خطوات ربط GoHighLevel Workflows
+
+1. انسخ رابط الـ Webhook الخاص بمتجرك من صفحة **حجوزات الكاليندر (GHL)** أو صفحة **الإعدادات**:
+   ```text
+   https://[YOUR_DOMAIN]/api/v1/webhooks/ghl?store_id=[STORE_ID]
+   ```
+2. في GoHighLevel، انتقل إلى **Automation > Workflows**.
+3. أنشئ سير عمل جديد أو اختر سير العمل الخاص بحجز المواعيد.
+4. أضف Trigger: **Customer Booked Appointment** أو **Appointment Status**.
+5. أضف Action من نوع **Custom Webhook**:
+   - **Method:** `POST`
+   - **URL:** الرابط المنسوخ أعلاه
+6. قم بنشر وتفعيل الـ Workflow (**Publish & Save**).
+
+---
+
+## ⚙️ مواصفات قوالب واتساب المواعيد في Meta (Category: Marketing)
+
+يدعم النظام القالبين التاليين المعتمدين في Meta WhatsApp Business (فئة Marketing):
+
+### 1️⃣ قالب تأكيد الحجز الفوري (`appointment_confirmation`)
+* **الفئة (Category):** `MARKETING`
+* **المتغيرات (Body Parameters):**
+  * `{{1}}` (`{{date}}`): تاريخ الموعد (مثال: `2026-09-13`)
+  * `{{2}}` (`{{time}}`): توقيت الموعد (مثال: `05:00 PM`)
+* **الأزرار:** لا يوجد أزرار.
+
+### 2️⃣ قالب تذكير الموعد (`appointment_reminder`)
+* **الفئة (Category):** `MARKETING`
+* **المتغيرات (Body Parameters):**
+  * `{{1}}` (`{{link}}`): رابط الاجتماع أو Google Meet (مثال: `https://meet.google.com/xyz`)
+* **التوقيت:** يُرسل آلياً قبل بدء الموعد بـ 15 دقيقة.
 
 ---
 
 ## 🚀 طريقة التشغيل والنشر (Setup & Deployment)
 
-إذا كنت ترغب في تشغيل المشروع كبيئة إنتاج (Production)، يرجى تتبع الخطوات التالية بدقة:
-
-### 1. إعداد متغيرات البيئة للـ Backend
-جميع المتغيرات الحساسة الخاصة بالخادم (Backend) موجودة داخل ملف `backend/.env`. تأكد من إنشاء هذا الملف (بناءً على `.env.example`) وتعبئة البيانات التالية:
-
-- `DATABASE_URL`: رابط اتصال قاعدة بيانات PostgreSQL الفعلي (مثل AWS RDS أو خادمك الخاص).
-- `SALLA_WEBHOOK_SECRET`: الرمز السري الذي يوفره لك موقع مطوري سلة للتحقق من هوية الطلبات (Webhook Signature).
-- `WHATSAPP_TOKEN`: التوكن الدائم الخاص بالـ API من حساب Meta Developers.
-- `WHATSAPP_PHONE_NUMBER_ID`: رقم المعرف الخاص برقم الواتساب المرسل.
-- `WHATSAPP_TEMPLATE_NAME`: **اسم القالب (Template Name)** المعتمد في Meta لإرساله كتذكير بالسلة (الافتراضي هو `abandoned_cart_reminder`).
-- `REMINDER_DELAY_HOURS`: عدد الساعات التي يجب أن ينتظرها الخادم بعد السلة المهجورة ليقوم بإرسال رسالة التذكير (مثلاً: 1 ساعة أو 24 ساعة).
-- `APP_ENV`: يفضل تعيينه كـ `production`.
-
-### 2. إعداد متغيرات الواجهة الأمامية للـ Dashboard
-في حال أردت رفع لوحة التحكم على الإنترنت (أو تشغيلها من سيرفر مستقل)، يجب عليك توجيهها للاتصال بـ API الخاص بك:
-
-- افتح ملف `dashboard/script.js`.
-- في **السطر الأول** من الملف، قم بتغيير المتغير `API_BASE` إلى رابط الدومين الفعلي للـ Backend الخاص بك، هكذا:
-  ```javascript
-  const API_BASE = 'https://api.yourdomain.com/api/v1'; 
-  ```
-
-### 3. إعداد سلة (Salla Developer Portal)
-- قم بتسجيل الـ Webhook الخاص بنظامك ليتم توجيهه إلى:
-  `https://api.yourdomain.com/api/v1/webhooks/salla`
-- قم باختيار الحدث (Event) كـ `order.abandoned`.
-
-### 4. تشغيل الخادم
-لتشغيل الخادم، قم بتنفيذ أوامر التهجير (Migrations) لبناء قاعدة البيانات:
+### 1. إعداد قاعدة البيانات والـ Migrations
 ```bash
 cd backend
 alembic upgrade head
 ```
 
-ثم لتشغيل الخادم في بيئة الـ Production، يُنصح باستخدام `gunicorn` (مع تثبيته إذا لم يكن موجوداً):
+### 2. تشغيل الـ Backend
 ```bash
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 3. بناء وتشغيل الـ Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+# أو للبناء للإنتاج:
+npm run build
 ```
 
 ---
 
 ## 🧪 تشغيل الاختبارات (Testing)
-تمت كتابة اختبارات أساسية باستخدام `pytest` للتأكد من نظام أمان سلة ومعمارية الـ API. لتشغيلها:
+
 ```bash
 cd backend
 pytest

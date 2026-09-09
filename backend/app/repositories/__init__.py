@@ -7,6 +7,7 @@ from .email_setting_repo import EmailSettingRepository
 from .email_contact_repo import EmailContactRepository
 from .email_campaign_repo import EmailCampaignRepository
 from .email_tracking_repo import EmailTrackingRepository
+from .appointment_repository import AppointmentRepository
 
 __all__ = [
     "BaseRepository",
@@ -18,5 +19,5 @@ __all__ = [
     "EmailContactRepository",
     "EmailCampaignRepository",
     "EmailTrackingRepository",
-
+    "AppointmentRepository"
 ]
