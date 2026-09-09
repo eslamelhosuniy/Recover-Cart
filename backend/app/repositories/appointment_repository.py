@@ -49,16 +49,21 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 query = query.where(self.model.status == status)
 
         if search:
-            search_pattern = f"%{search}%"
-            query = query.where(
-                or_(
-                    self.model.customer_name.ilike(search_pattern),
-                    self.model.customer_phone.ilike(search_pattern),
-                    self.model.customer_email.ilike(search_pattern),
-                    self.model.calendar_name.ilike(search_pattern),
-                    self.model.ghl_appointment_id.ilike(search_pattern),
-                )
-            )
+            clean_search = search.strip()
+            search_pattern = f"%{clean_search}%"
+            search_conditions = [
+                self.model.customer_name.ilike(search_pattern),
+                self.model.customer_phone.ilike(search_pattern),
+                self.model.customer_email.ilike(search_pattern),
+                self.model.calendar_name.ilike(search_pattern),
+                self.model.ghl_appointment_id.ilike(search_pattern),
+            ]
+            if clean_search.startswith("0") and len(clean_search) > 3:
+                search_conditions.append(self.model.customer_phone.ilike(f"%{clean_search.lstrip('0')}%"))
+            elif clean_search.startswith("+"):
+                search_conditions.append(self.model.customer_phone.ilike(f"%{clean_search.lstrip('+')}%"))
+
+            query = query.where(or_(*search_conditions))
 
         if start_date:
             query = query.where(self.model.start_time >= start_date)
@@ -95,16 +100,21 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 query = query.where(self.model.status == status)
 
         if search:
-            search_pattern = f"%{search}%"
-            query = query.where(
-                or_(
-                    self.model.customer_name.ilike(search_pattern),
-                    self.model.customer_phone.ilike(search_pattern),
-                    self.model.customer_email.ilike(search_pattern),
-                    self.model.calendar_name.ilike(search_pattern),
-                    self.model.ghl_appointment_id.ilike(search_pattern),
-                )
-            )
+            clean_search = search.strip()
+            search_pattern = f"%{clean_search}%"
+            search_conditions = [
+                self.model.customer_name.ilike(search_pattern),
+                self.model.customer_phone.ilike(search_pattern),
+                self.model.customer_email.ilike(search_pattern),
+                self.model.calendar_name.ilike(search_pattern),
+                self.model.ghl_appointment_id.ilike(search_pattern),
+            ]
+            if clean_search.startswith("0") and len(clean_search) > 3:
+                search_conditions.append(self.model.customer_phone.ilike(f"%{clean_search.lstrip('0')}%"))
+            elif clean_search.startswith("+"):
+                search_conditions.append(self.model.customer_phone.ilike(f"%{clean_search.lstrip('+')}%"))
+
+            query = query.where(or_(*search_conditions))
 
         if start_date:
             query = query.where(self.model.start_time >= start_date)
