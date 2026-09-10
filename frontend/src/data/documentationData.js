@@ -433,6 +433,88 @@ export const documentationData = {
           'تحقق من وصول بيانات الموعد فوراً إلى صفحة حجوزات الكاليندر في Recover',
           'تحقق من استقبال رسالة تأكيد الحجز على رقم الواتساب المسجل'
         ]
+      },
+      {
+        id: 'mailgun-email-marketing',
+        title: 'إعداد وربط Mailgun للتسويق بالبريد',
+        description: 'شرح شامل لربط Mailgun كمزود بريد افتراضي، فحص سجلات الـ DNS، ربط الـ Webhooks المشفرة، وتشغيل محرك الإحماء',
+        icon: 'fa-envelope-open-text',
+        color: '#EF4444',
+        steps: [
+          {
+            number: 1,
+            title: 'الوصول إلى لوحة تحكم Mailgun',
+            description: 'قم بزيارة https://app.mailgun.com وسجل الدخول، ثم انتقل إلى Sending > Domains لإضافة نطاق الإرسال الخاص بك'
+          },
+          {
+            number: 2,
+            title: 'إضافة وتوثيق سجلات الـ DNS',
+            description: 'أضف سجلات SPF و DKIM و MX و CNAME في لوحة إدارة النطاق الخاص بك (مثل Cloudflare أو Namecheap) لتوثيق النطاق'
+          },
+          {
+            number: 3,
+            title: 'نسخ مفاتيح الربط (API Keys)',
+            description: 'من لوحة Mailgun انتقل إلى Settings > API Keys وانسخ كلاً من: Mailgun API Key و HTTP Webhook Signing Key'
+          },
+          {
+            number: 4,
+            title: 'إدخال البيانات في إعدادات Recover',
+            description: 'ادخل إلى صفحة الإعدادات في متجرك، اختر Mailgun وأدخل الـ API Key، النطاق (Sending Domain)، المنطقة (US/EU)، ومفتاح التوقيع'
+          },
+          {
+            number: 5,
+            title: 'فحص سجلات DNS وجودة النطاق',
+            description: 'اضغط على زر "فحص سجلات DNS وجودة النطاق" للتأكد من جاهزية السجلات وخلوها من أي أخطاء قبل بدء الإرسال'
+          },
+          {
+            number: 6,
+            title: 'إعداد الـ Webhooks في Mailgun',
+            description: 'انسخ رابط الـ Webhook الخاص بمتجرك وأضفه في Mailgun > Sending > Webhooks وفعّل أحداث: Delivered, Opens, Clicks, Bounces, Spam, Unsubscribes'
+          },
+          {
+            number: 7,
+            title: 'إطلاق الحملات وتشغيل محرك الإحماء',
+            description: 'عند إنشاء حملة بريدية جديدة، فعّل خيار "الإحماء التدريجي" ليقوم النظام بتقسيم الإرسال وجدولته تلقائياً لبناء سمعة بريدية ممتازة'
+          }
+        ],
+        prerequisites: [
+          'حساب Mailgun نشط ونطاق إرسال مضاف (Sending Domain)',
+          'لوحة تحكم إدارة سجلات الـ DNS للنطاق (مثل Cloudflare أو GoDaddy)',
+          'حساب متجر نشط على منصة Recover'
+        ],
+        troubleshooting: [
+          {
+            issue: 'سجلات الـ DNS تظهر غير نشطة (Unverified)',
+            solution: 'قد يستغرق انتشار سجلات الـ DNS ما بين 5 دقائق إلى 24 ساعة. تأكد من صحة قيم SPF و DKIM ونوع السجل TXT'
+          },
+          {
+            issue: 'أحداث فتح البريد والنقر لا تظهر في التقارير',
+            solution: 'تأكد من ضبط رابط الـ Webhook في Mailgun بشكل صحيح وتأكد من نسخ HTTP Webhook Signing Key في الإعدادات'
+          },
+          {
+            issue: 'رسائل الحملات تصل إلى مجلد الـ Spam',
+            solution: 'تأكد من تفعيل خيار الإحماء التدريجي (Warmup) للحملات الجديدة واستخدم أداة فحص الإيميلات لتنظيف القائمة'
+          }
+        ],
+        faq: [
+          {
+            question: 'ما الفرق بين منطقتي US و EU في Mailgun؟',
+            answer: 'يجب اختيار المنطقة التي اخترتها عند إنشاء النطاق في Mailgun (نطاقات US تستخدم api.mailgun.net ونطاقات EU تستخدم api.eu.mailgun.net)'
+          },
+          {
+            question: 'كيف يعمل محرك الإحماء التدريجي (Warmup Engine)؟',
+            answer: 'يقوم بجدولة إرسال الحملة آلياً بجرعات يومية متزايدة (45 ثم 90 ثم 180 ثم 360...) لبناء سمعة إرسال موثوقة لدى مزودي البريد (Gmail, Yahoo, Outlook)'
+          },
+          {
+            question: 'هل يمكنني التبديل بين Mailgun و SendGrid لاحقاً؟',
+            answer: 'نعم، يدعم النظام كلا المزودين بنمط متعدد ويمكنك التبديل بينهما في أي وقت من صفحة الإعدادات'
+          }
+        ],
+        verification: [
+          'الضغط على فحص سجلات DNS وظهور حالة النطاق Active',
+          'إرسال بريد تجريبي من صفحة الإعدادات والتحقق من وصوله للوارد',
+          'التحقق من استقبال أحداث الـ Webhooks وظهورها في تقارير الحملات'
+        ]
       }
     ]
   },
@@ -870,7 +952,90 @@ export const documentationData = {
           'Check that the booking appears immediately in Recover Calendar Bookings table',
           'Verify instant WhatsApp confirmation is received on the customer phone number'
         ]
+      },
+      {
+        id: 'mailgun-email-marketing',
+        title: 'Mailgun Email Marketing Setup',
+        description: 'Comprehensive guide to connect Mailgun as default email provider, verify DNS records, configure HMAC-signed Webhooks, and use the Warmup Engine',
+        icon: 'fa-envelope-open-text',
+        color: '#EF4444',
+        steps: [
+          {
+            number: 1,
+            title: 'Access Mailgun Dashboard',
+            description: 'Visit https://app.mailgun.com and log in, then go to Sending > Domains to add your custom sending domain'
+          },
+          {
+            number: 2,
+            title: 'Add & Verify DNS Records',
+            description: 'Add SPF, DKIM, MX, and CNAME records in your DNS management provider (such as Cloudflare or Namecheap) to verify domain ownership'
+          },
+          {
+            number: 3,
+            title: 'Retrieve API Keys',
+            description: 'Navigate to Settings > API Keys in Mailgun to copy your Primary API Key and HTTP Webhook Signing Key'
+          },
+          {
+            number: 4,
+            title: 'Configure Settings in Recover',
+            description: 'Open your store Settings in Recover, select Mailgun, and enter your API Key, Sending Domain, Region (US/EU), and Webhook Signing Key'
+          },
+          {
+            number: 5,
+            title: 'Check Domain DNS Health',
+            description: 'Click "Check Domain DNS & Health" button in Recover to verify that all records (SPF, DKIM, MX, CNAME) are active and valid'
+          },
+          {
+            number: 6,
+            title: 'Setup Webhooks in Mailgun',
+            description: 'Copy your store Webhook URL from Recover and paste it in Mailgun > Sending > Webhooks. Enable Delivered, Opens, Clicks, Bounces, Spam, and Unsubscribes'
+          },
+          {
+            number: 7,
+            title: 'Launch Campaigns with Warmup Engine',
+            description: 'When creating an email campaign, enable "Warmup Engine" to automatically schedule graduated daily sending batches and build high domain reputation'
+          }
+        ],
+        prerequisites: [
+          'Active Mailgun account with an added Sending Domain',
+          'Access to DNS records management for your sending domain',
+          'Active store administrator account in Recover'
+        ],
+        troubleshooting: [
+          {
+            issue: 'DNS records show unverified or not active',
+            solution: 'DNS propagation may take between 5 minutes and 24 hours. Ensure TXT record values for SPF and DKIM match Mailgun specifications exactly'
+          },
+          {
+            issue: 'Open and click events are not tracked in campaigns',
+            solution: 'Verify your store Webhook URL is registered in Mailgun and the HTTP Webhook Signing Key is saved correctly in Recover settings'
+          },
+          {
+            issue: 'Campaign emails landing in Spam folders',
+            solution: 'Always enable the Warmup Engine for new domains and validate your subscriber list using the Email Validation tool'
+          }
+        ],
+        faq: [
+          {
+            question: 'What is the difference between US and EU regions?',
+            answer: 'Select the region where your sending domain was created in Mailgun (US uses api.mailgun.net while EU uses api.eu.mailgun.net)'
+          },
+          {
+            question: 'How does the Campaign Warmup Engine work?',
+            answer: 'It automatically distributes campaign volume over multiple days with exponential increments (45, 90, 180, 360...) to build trust with mailbox providers'
+          },
+          {
+            question: 'Can I switch between Mailgun and SendGrid later?',
+            answer: 'Yes, Recover supports both providers with full backward compatibility. You can switch at any time in the Settings page'
+          }
+        ],
+        verification: [
+          'Click "Check Domain DNS" and confirm domain status is Active',
+          'Send a test transactional email from settings and check inbox delivery',
+          'Verify webhook delivery events appear in campaign tracking reports'
+        ]
       }
     ]
   }
 }
+

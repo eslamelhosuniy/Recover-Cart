@@ -62,7 +62,7 @@ export default function EmailDesigns() {
       <div className="page-header d-flex justify-between align-center mb-4">
         <div>
           <h1 className="page-title"><i className="fa-solid fa-palette text-primary" /> التصاميم والقوالب</h1>
-          <p className="page-subtitle">استعرض تصميمات ورسائل البريد المحفوظة في حسابك في SendGrid</p>
+          <p className="page-subtitle">استعرض تصميمات ورسائل البريد المحفوظة في حسابك لدى مزود البريد (Mailgun / SendGrid)</p>
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export default function EmailDesigns() {
           <div className="empty-state">
             <div className="empty-icon"><i className="fa-solid fa-palette" /></div>
             <h3>لا توجد تصاميم</h3>
-            <p>يمكنك تصميم وحفظ قوالبك عبر لوحة تحكم SendGrid لتظهر هنا.</p>
+            <p>يمكنك تصميم وحفظ قوالبك عبر لوحة تحكم مزود البريد (Mailgun أو SendGrid) لتظهر هنا.</p>
           </div>
         ) : (
           <>

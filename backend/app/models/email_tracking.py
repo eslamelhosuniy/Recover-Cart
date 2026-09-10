@@ -13,6 +13,7 @@ class EmailTrackingLog(Base):
     campaign_id = Column(UUID(as_uuid=True), ForeignKey("email_campaigns.id"), nullable=True)
     contact_id = Column(UUID(as_uuid=True), ForeignKey("email_contacts.id"), nullable=True)
     sendgrid_msg_id = Column(String, index=True, nullable=False)
+    provider = Column(String, default="mailgun", nullable=True)
     event_type = Column(String, nullable=False)
     url = Column(String, nullable=True)
     timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

@@ -239,7 +239,7 @@ export default function EmailCampaigns() {
 
   const viewStats = (sgCampaignId) => {
     if (!sgCampaignId) {
-      showNotification("هذه الحملة لم تدمج مع SendGrid بعد", "warning");
+      showNotification("هذه الحملة لم تدمج مع مزود البريد بعد", "warning");
       return;
     }
     const cStats = stats[sgCampaignId] || { opens: 0, clicks: 0, delivered: 0, bounces: 0 };
@@ -279,14 +279,14 @@ export default function EmailCampaigns() {
   }
 
   return (
-    <div className="animate-in" style={{ paddingBottom: '2rem' }}>
-      <div className="d-flex justify-between align-center mb-4">
+    <div className="page-container" style={{ paddingBottom: '2rem' }}>
+      <div className="d-flex justify-between align-center mb-4" style={{ flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.25rem' }}>
-            الحملات الإعلانية
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            استعرض حملاتك التسويقية السابقة أو أنشئ رسائل جديدة.
+          <h1 className="page-title" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.25rem' }}>
+            حملات البريد الإلكتروني
+          </h1>
+          <p className="page-subtitle" style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+            إدارة وإنشاء حملات البريد الإلكتروني وإرسالها ومتابعة تقاريرها وإحمائها
           </p>
         </div>
         <div className="d-flex gap-2">
@@ -294,8 +294,8 @@ export default function EmailCampaigns() {
           <button className="btn btn-secondary" onClick={async () => {
             setActionLoading(true)
             try {
-              await emailMarketingApi.syncSendgridData(activeStoreId)
-              showNotification("تمت مزامنة البيانات بنجاح", "success")
+              await emailMarketingApi.syncProviderData(activeStoreId)
+              showNotification("تمت مزامنة البيانات من المزود بنجاح", "success")
               fetchData()
             } catch(e) {
               showNotification("فشل المزامنة", "error")
@@ -303,7 +303,7 @@ export default function EmailCampaigns() {
               setActionLoading(false)
             }
           }} disabled={actionLoading}>
-            <i className={`fa-solid fa-rotate ${actionLoading ? 'fa-spin' : ''}`} /> مزامنة SendGrid
+            <i className={`fa-solid fa-rotate ${actionLoading ? 'fa-spin' : ''}`} /> مزامنة المزود
           </button>
 
           <button className="btn btn-secondary" onClick={() => setShowSingleModal(true)}>
@@ -351,7 +351,7 @@ export default function EmailCampaigns() {
                   <th style={{ padding: '1rem', fontWeight: 600 }}>اسم الحملة</th>
                   <th style={{ padding: '1rem', fontWeight: 600 }}>العنوان (Subject)</th>
                   <th style={{ padding: '1rem', fontWeight: 600 }}>الحالة</th>
-                  <th style={{ padding: '1rem', fontWeight: 600 }}>رقم SendGrid</th>
+                  <th style={{ padding: '1rem', fontWeight: 600 }}>معرف المزود (ID)</th>
                   <th style={{ padding: '1rem', fontWeight: 600 }}>تاريخ الإنشاء</th>
                   <th style={{ padding: '1rem', fontWeight: 600 }}>إجراءات</th>
                 </tr>

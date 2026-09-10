@@ -485,7 +485,8 @@ async def get_campaigns_stats(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/sync-sendgrid/{store_id}")
-async def sync_sendgrid(
+@router.post("/sync-provider/{store_id}")
+async def sync_provider(
     store_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -496,3 +497,49 @@ async def sync_sendgrid(
         return await service.sync_sendgrid_data(db, str(store_id))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/mailgun/{store_id}/domain-status")
+async def get_mailgun_domain_status(
+    store_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    service = EmailMarketingService()
+    try:
+        return await service.check_domain_dns(db, str(store_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/mailgun/{store_id}/ip-warmup")
+async def get_mailgun_ip_warmup(
+    store_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    service = EmailMarketingService()
+    try:
+        return await service.get_ip_warmup_status(db, str(store_id))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+from app.schemas.email_schemas import MailgunIpWarmupToggleRequest
+
+@router.post("/mailgun/{store_id}/ip-warmup/toggle")
+async def toggle_mailgun_ip_warmup(
+    store_id: UUID,
+    toggle_in: MailgunIpWarmupToggleRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    await get_store_for_user(store_id, db, current_user)
+    service = EmailMarketingService()
+    try:
+        return await service.toggle_ip_warmup(db, str(store_id), toggle_in.ip_address, toggle_in.enable)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

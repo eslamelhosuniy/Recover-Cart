@@ -12,7 +12,7 @@ async def test_send_template_message_success():
     
     with patch("httpx.AsyncClient.post") as mock_post:
         mock_post.return_value = mock_response
-        response = await whatsapp_service.send_template_message("+966501234567", "abandoned_cart_reminder")
+        response = await whatsapp_service.send_template_message("+966501234567", "abandoned_cart_reminder", "phone_123", "token_abc")
         
         assert "messages" in response
         assert response["messages"][0]["id"] == "wamid.123"

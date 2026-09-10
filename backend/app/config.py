@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     redis_url: str
     app_env: str = "development"
     app_secret_key: str
+    salla_webhook_secret: str = ""
     reminder_delay_hours: int = 1
     # Comma-separated list of allowed CORS origins
     allowed_origins: List[str] = [
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     }
 
     # default to no env_file here; we'll decide at runtime which file (if any) to load
-    model_config = SettingsConfigDict(env_file=None, env_file_encoding="utf-8", populate_by_name=True)
+    model_config = SettingsConfigDict(env_file=None, env_file_encoding="utf-8", populate_by_name=True, extra="ignore")
 
 
 # Load `.env` only during local development. In production, rely on real environment variables.

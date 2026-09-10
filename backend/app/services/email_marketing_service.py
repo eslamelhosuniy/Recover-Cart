@@ -1,11 +1,16 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
+import datetime
+from typing import Optional, List, Dict, Any
 from app.repositories.email_setting_repo import EmailSettingRepository
 from app.repositories.email_contact_repo import EmailContactRepository
 from app.repositories.email_campaign_repo import EmailCampaignRepository, EmailCampaignRunLogRepository
-from app.services.sendgrid_client import SendGridClient
+from app.services.email_providers.factory import EmailProviderFactory
+from app.services.email_providers.mailgun_client import MailgunClient
+from app.services.email_providers.sendgrid_client import SendGridClient
 
 logger = logging.getLogger(__name__)
+
 
 class EmailMarketingService:
     def __init__(self):
@@ -14,65 +19,71 @@ class EmailMarketingService:
         self.campaign_repo = EmailCampaignRepository()
         self.run_log_repo = EmailCampaignRunLogRepository()
 
-    async def get_senders(self, db: AsyncSession, store_id: str):
+    async def _get_provider_for_store(self, db: AsyncSession, store_id: str):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        from app.models.sendgrid_data import SendgridSender
-        from sqlalchemy.future import select
-        result = await db.execute(select(SendgridSender).where(SendgridSender.store_id == store_id))
-        return [{"id": s.sg_sender_id, "nickname": s.nickname, "from": {"email": s.from_email, "name": s.from_name}} for s in result.scalars().all()]
+        if not settings:
+            raise ValueError("Email settings not configured for this store.")
+        return EmailProviderFactory.get_provider(settings), settings
+
+    async def get_senders(self, db: AsyncSession, store_id: str):
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        if isinstance(provider, SendGridClient):
+            from app.models.sendgrid_data import SendgridSender
+            from sqlalchemy.future import select
+            result = await db.execute(select(SendgridSender).where(SendgridSender.store_id == store_id))
+            senders = result.scalars().all()
+            if senders:
+                return [{"id": s.sg_sender_id, "nickname": s.nickname, "from": {"email": s.from_email, "name": s.from_name}} for s in senders]
+        
+        return await provider.get_senders()
 
     async def get_lists(self, db: AsyncSession, store_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
+        provider, settings = await self._get_provider_for_store(db, store_id)
         from app.models.sendgrid_data import SendgridList
         from sqlalchemy.future import select
         result = await db.execute(select(SendgridList).where(SendgridList.store_id == store_id))
-        return [{"id": s.sg_list_id, "name": s.name, "contact_count": s.contact_count} for s in result.scalars().all()]
+        local_lists = result.scalars().all()
+        if local_lists:
+            return [{"id": s.sg_list_id, "name": s.name, "contact_count": s.contact_count} for s in local_lists]
+        
+        # Fallback to direct provider query
+        return await provider.get_lists()
 
     async def get_suppression_groups(self, db: AsyncSession, store_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        from app.models.sendgrid_data import SendgridSuppressionGroup
-        from sqlalchemy.future import select
-        result = await db.execute(select(SendgridSuppressionGroup).where(SendgridSuppressionGroup.store_id == store_id))
-        return [{"id": s.sg_group_id, "name": s.name, "description": s.description, "is_default": s.is_default} for s in result.scalars().all()]
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        if isinstance(provider, SendGridClient):
+            from app.models.sendgrid_data import SendgridSuppressionGroup
+            from sqlalchemy.future import select
+            result = await db.execute(select(SendgridSuppressionGroup).where(SendgridSuppressionGroup.store_id == store_id))
+            local_groups = result.scalars().all()
+            if local_groups:
+                return [{"id": s.sg_group_id, "name": s.name, "description": s.description, "is_default": s.is_default} for s in local_groups]
+        
+        return await provider.get_suppression_groups()
 
-    async def create_list(self, db: AsyncSession, store_id: str, name: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        res = await SendGridClient(settings.sendgrid_api_key).create_list(name)
+    async def create_list(self, db: AsyncSession, store_id: str, name: str, description: Optional[str] = None):
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        res = await provider.create_list(name, description)
         
         # Save to local DB
         from app.models.sendgrid_data import SendgridList
-        new_list = SendgridList(store_id=store_id, sg_list_id=str(res.get("id")), name=res.get("name", ""), contact_count=0)
+        list_id = str(res.get("id") or res.get("address"))
+        new_list = SendgridList(store_id=store_id, sg_list_id=list_id, name=res.get("name", name), contact_count=0)
         db.add(new_list)
         await db.commit()
         return res
 
     async def get_designs(self, db: AsyncSession, store_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        return await SendGridClient(settings.sendgrid_api_key).get_designs()
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        return await provider.get_designs()
 
     async def get_design(self, db: AsyncSession, store_id: str, design_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        return await SendGridClient(settings.sendgrid_api_key).get_design(design_id)
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        return await provider.get_design(design_id)
 
     async def delete_list(self, db: AsyncSession, store_id: str, list_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        
-        # Delete from SendGrid
-        await SendGridClient(settings.sendgrid_api_key).delete_list(list_id)
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        await provider.delete_list(list_id)
         
         # Delete from local DB
         from app.models.sendgrid_data import SendgridList
@@ -82,35 +93,31 @@ class EmailMarketingService:
         if local_list:
             await db.delete(local_list)
             await db.commit()
-            
+
     async def delete_design(self, db: AsyncSession, store_id: str, design_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        await SendGridClient(settings.sendgrid_api_key).delete_design(design_id)
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        await provider.delete_design(design_id)
 
     async def delete_suppression_group(self, db: AsyncSession, store_id: str, group_id: int):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        if isinstance(provider, SendGridClient):
+            await provider.delete_suppression_group(group_id)
             
-        await SendGridClient(settings.sendgrid_api_key).delete_suppression_group(group_id)
-        
-        from app.models.sendgrid_data import SendgridSuppressionGroup
-        from sqlalchemy.future import select
-        res = await db.execute(select(SendgridSuppressionGroup).where(SendgridSuppressionGroup.store_id == store_id, SendgridSuppressionGroup.sg_group_id == group_id))
-        local_sg = res.scalar_one_or_none()
-        if local_sg:
-            await db.delete(local_sg)
-            await db.commit()
-            
+            from app.models.sendgrid_data import SendgridSuppressionGroup
+            from sqlalchemy.future import select
+            res = await db.execute(select(SendgridSuppressionGroup).where(SendgridSuppressionGroup.store_id == store_id, SendgridSuppressionGroup.sg_group_id == group_id))
+            local_sg = res.scalar_one_or_none()
+            if local_sg:
+                await db.delete(local_sg)
+                await db.commit()
+
     async def get_contacts_by_list(self, db: AsyncSession, store_id: str, list_id: str, skip: int = 0, limit: int = 20):
         from app.models.email_contact import EmailContact
         from sqlalchemy.future import select
         from sqlalchemy import func
         
         settings = await self.setting_repo.get_by_store_id(db, store_id)
-        default_list_id = settings.sendgrid_default_list_id if settings else None
+        default_list_id = settings.sendgrid_default_list_id or settings.mailgun_default_list_address if settings else None
         
         if list_id == default_list_id:
             query = select(EmailContact).where(
@@ -143,34 +150,36 @@ class EmailMarketingService:
         if not contact or str(contact.store_id) != str(store_id):
             raise ValueError("Contact not found")
             
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if settings and settings.sendgrid_api_key:
-            try:
-                await SendGridClient(settings.sendgrid_api_key).delete_contact_by_email(contact.email)
-            except Exception as e:
-                logger.error(f"Failed to delete contact from SendGrid: {e}")
+        try:
+            provider, settings = await self._get_provider_for_store(db, store_id)
+            await provider.delete_contact(contact.email, contact.sendgrid_list_id)
+        except Exception as e:
+            logger.error(f"Failed to delete contact from provider: {e}")
                 
         await db.delete(contact)
         await db.commit()
 
     async def create_suppression_group(self, db: AsyncSession, store_id: str, name: str, description: str, is_default: bool = False):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-        res = await SendGridClient(settings.sendgrid_api_key).create_suppression_group(name, description, is_default)
-        
-        # Save to local DB
-        from app.models.sendgrid_data import SendgridSuppressionGroup
-        new_sg = SendgridSuppressionGroup(store_id=store_id, sg_group_id=int(res.get("id")), name=res.get("name", ""), description=res.get("description", ""), is_default=res.get("is_default", False))
-        db.add(new_sg)
-        await db.commit()
-        return res
-
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        if isinstance(provider, SendGridClient):
+            res = await provider.create_suppression_group(name, description, is_default)
+            from app.models.sendgrid_data import SendgridSuppressionGroup
+            new_sg = SendgridSuppressionGroup(store_id=store_id, sg_group_id=int(res.get("id")), name=res.get("name", ""), description=res.get("description", ""), is_default=res.get("is_default", False))
+            db.add(new_sg)
+            await db.commit()
+            return res
+        return {"id": 1, "name": name, "description": description, "is_default": is_default}
 
     async def sync_pending_contacts(self, db: AsyncSession, store_id: str):
         settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            logger.warning(f"Store {store_id} missing SendGrid API key for contact sync.")
+        if not settings:
+            logger.warning(f"Store {store_id} missing email settings for contact sync.")
+            return
+
+        try:
+            provider = EmailProviderFactory.get_provider(settings)
+        except Exception as e:
+            logger.warning(f"Could not initialize provider for contact sync in store {store_id}: {e}")
             return
 
         pending = await self.contact_repo.get_pending_sync_contacts(db)
@@ -179,60 +188,68 @@ class EmailMarketingService:
         if not store_pending:
             return
 
-        client = SendGridClient(settings.sendgrid_api_key)
-        
-        # Group contacts by list_id
         from collections import defaultdict
         grouped_contacts = defaultdict(list)
+        default_list = settings.mailgun_default_list_address or settings.sendgrid_default_list_id
         
         for contact in store_pending:
-            target_list_id = contact.sendgrid_list_id
-            if not target_list_id and settings.sendgrid_default_list_id:
-                target_list_id = settings.sendgrid_default_list_id
-            
-            # Use 'no_list' as a placeholder key if target_list_id is still None
+            target_list_id = contact.sendgrid_list_id or default_list
             grouped_contacts[target_list_id or 'no_list'].append(contact)
 
         for list_id, group in grouped_contacts.items():
-            sg_contacts = []
+            formatted_contacts = []
             for contact in group:
                 data = {"email": contact.email}
                 if contact.first_name: data["first_name"] = contact.first_name
                 if contact.last_name: data["last_name"] = contact.last_name
-                sg_contacts.append(data)
+                formatted_contacts.append(data)
 
             try:
-                await client.add_or_update_contacts(list_id, sg_contacts)
+                await provider.add_or_update_contacts(list_id, formatted_contacts)
                 for contact in group:
                     await self.contact_repo.update(db, contact, {"sync_status": "synced"})
-                logger.info(f"Successfully sent {len(group)} contacts to SendGrid list {list_id} for store {store_id}")
+                logger.info(f"Successfully synced {len(group)} contacts for store {store_id}")
             except Exception as e:
-                logger.error(f"Failed to sync contacts to SendGrid list {list_id}: {str(e)}")
+                logger.error(f"Failed to sync contacts for store {store_id}: {e}")
                 for contact in group:
                     await self.contact_repo.update(db, contact, {"sync_status": "failed"})
 
-    async def create_campaign(self, db: AsyncSession, store_id: str, name: str, subject: str, list_id: str, sender_id: int, suppression_group_id: int = None, custom_unsubscribe_url: str = None, html_content: str = "", **kwargs):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
+    async def create_campaign(
+        self,
+        db: AsyncSession,
+        store_id: str,
+        name: str,
+        subject: str,
+        list_id: str,
+        sender_id: Optional[int] = 1,
+        suppression_group_id: Optional[int] = None,
+        custom_unsubscribe_url: Optional[str] = None,
+        html_content: str = "",
+        **kwargs
+    ):
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        
+        campaign_id_ref = None
+        
+        if isinstance(provider, SendGridClient):
+            response = await provider.create_single_send(
+                name=name,
+                subject=subject,
+                list_id=list_id,
+                sender_id=sender_id or 1,
+                suppression_group_id=suppression_group_id,
+                custom_unsubscribe_url=custom_unsubscribe_url,
+                html_content=html_content
+            )
+            campaign_id_ref = response.get("id")
+        else:
+            # For Mailgun, campaign reference is handled natively in local DB
+            import uuid
+            campaign_id_ref = f"mg_{uuid.uuid4().hex[:12]}"
 
-        client = SendGridClient(settings.sendgrid_api_key)
-        
-        response = await client.create_single_send(
-            name=name,
-            subject=subject,
-            list_id=list_id,
-            sender_id=sender_id,
-            suppression_group_id=suppression_group_id,
-            custom_unsubscribe_url=custom_unsubscribe_url,
-            html_content=html_content
-        )
-        
-        sg_campaign_id = response.get("id")
-        
         campaign_data = {
             "store_id": store_id,
-            "sendgrid_campaign_id": sg_campaign_id,
+            "sendgrid_campaign_id": campaign_id_ref,
             "name": name,
             "subject": subject,
             "status": "draft",
@@ -245,9 +262,7 @@ class EmailMarketingService:
         from app.models.email_contact import EmailContact
         from app.models.email_campaign_contact import EmailCampaignContact
         
-        # Find all contacts in this store that belong to the list_id
-        # (or default list if list_id matches settings.sendgrid_default_list_id)
-        default_list_id = settings.sendgrid_default_list_id
+        default_list_id = settings.sendgrid_default_list_id or settings.mailgun_default_list_address
         if list_id == default_list_id:
             query = select(EmailContact).where(
                 EmailContact.store_id == store_id,
@@ -278,11 +293,10 @@ class EmailMarketingService:
             raise ValueError("Campaign not found or does not belong to this store.")
             
         if campaign.sendgrid_campaign_id and campaign.status == "draft":
-            settings = await self.setting_repo.get_by_store_id(db, store_id)
-            if settings and settings.sendgrid_api_key:
-                client = SendGridClient(settings.sendgrid_api_key)
+            provider, settings = await self._get_provider_for_store(db, store_id)
+            if isinstance(provider, SendGridClient):
                 try:
-                    await client.update_single_send(
+                    await provider.update_single_send(
                         campaign_id=campaign.sendgrid_campaign_id,
                         name=update_data.get("name"),
                         subject=update_data.get("subject"),
@@ -297,57 +311,127 @@ class EmailMarketingService:
         
         return await self.campaign_repo.update(db, campaign, update_data)
 
-    async def sync_campaigns_status(self, db: AsyncSession, store_id: str):
+    async def schedule_campaign(self, db: AsyncSession, store_id: str, campaign_id: str):
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        campaign = await self.campaign_repo.get_by_id(db, campaign_id)
+        if not campaign or str(campaign.store_id) != str(store_id):
+            raise ValueError("Campaign not found or does not belong to this store.")
+
+        if campaign.status not in {"draft", "scheduled"}:
+            raise ValueError(f"This campaign cannot be scheduled because its current status is '{campaign.status}'.")
+
+        # Fetch contacts linked to this campaign
         from sqlalchemy.future import select
-        from app.models.email_campaign import EmailCampaign
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            return
-            
-        # Get all scheduled campaigns
-        res = await db.execute(select(EmailCampaign).where(EmailCampaign.store_id == store_id, EmailCampaign.status == "scheduled"))
-        campaigns = res.scalars().all()
-        if not campaigns:
-            return
-            
-        client = SendGridClient(settings.sendgrid_api_key)
-        for c in campaigns:
-            if c.sendgrid_campaign_id:
-                try:
-                    sg_camp = await client.get_single_send(c.sendgrid_campaign_id)
-                    sg_status = sg_camp.get("status")
-                    if sg_status and sg_status.lower() in ["triggered", "done"]:
-                        await self.campaign_repo.update(db, c, {"status": "sent"})
-                except Exception as e:
-                    logger.error(f"Failed to check status for {c.sendgrid_campaign_id}: {e}")
+        from app.models.email_contact import EmailContact
+        from app.models.email_campaign_contact import EmailCampaignContact
+
+        res = await db.execute(
+            select(EmailContact).join(EmailCampaignContact).where(EmailCampaignContact.campaign_id == campaign.id)
+        )
+        contacts = res.scalars().all()
+
+        if not contacts:
+            raise ValueError("Cannot schedule campaign with no contacts.")
+
+        # Warmup Scheduling Engine
+        if campaign.is_warmup:
+            WARMUP_SCHEDULE = [45, 90, 180, 360, 720, 1440, 2880, 5760, 11520, 23040, 46080, 50000]
+            chunks = []
+            remaining = list(contacts)
+            day_idx = 0
+            while remaining:
+                limit = WARMUP_SCHEDULE[day_idx] if day_idx < len(WARMUP_SCHEDULE) else WARMUP_SCHEDULE[-1]
+                chunks.append(remaining[:limit])
+                remaining = remaining[limit:]
+                day_idx += 1
+
+            first_scheduled_at = None
+
+            for idx, chunk in enumerate(chunks):
+                day = idx + 1
+                send_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=idx)
+                if idx == 0:
+                    first_scheduled_at = send_time
+
+                chunk_recipients = [{"email": c.email, "first_name": c.first_name, "last_name": c.last_name, "id": str(c.id)} for c in chunk]
+
+                child_campaign_id = None
+
+                if isinstance(provider, MailgunClient):
+                    # Mailgun scheduled batch with warmup tag
+                    tag = f"warmup-day-{day}"
+                    send_time_rfc = send_time.strftime("%a, %d %b %Y %H:%M:%S GMT")
+                    await provider.send_batch_email(
+                        recipients=chunk_recipients,
+                        subject=campaign.subject or campaign.name,
+                        html_content=f"<p>{campaign.subject or campaign.name}</p>",
+                        from_email=settings.from_email or f"noreply@{settings.mailgun_domain}",
+                        from_name=settings.from_name,
+                        scheduled_at=send_time_rfc if idx > 0 else None,
+                        campaign_name=f"{campaign.name} - Day {day}",
+                        tags=["warmup", tag]
+                    )
+                    child_campaign_id = f"mg_warmup_{campaign.id}_{day}"
+                else:
+                    # SendGrid single send creation per warmup day
+                    new_list_name = f"{campaign.name} - Warmup Day {day}"
+                    new_list = await provider.create_list(new_list_name)
+                    new_list_id = new_list.get("id")
+                    await provider.add_or_update_contacts(new_list_id, chunk_recipients)
                     
-        # Check warmup campaigns
-        res = await db.execute(select(EmailCampaign).where(EmailCampaign.store_id == store_id, EmailCampaign.status == "warming_up"))
-        warmups = res.scalars().all()
-        for w in warmups:
-            # Check if all child campaigns are sent
-            child_res = await db.execute(select(EmailCampaign).where(EmailCampaign.parent_id == w.id))
-            children = child_res.scalars().all()
-            all_sent = True
-            for child in children:
-                if child.status == "scheduled":
-                    if child.sendgrid_campaign_id:
-                        try:
-                            sg_camp = await client.get_single_send(child.sendgrid_campaign_id)
-                            sg_status = sg_camp.get("status")
-                            if sg_status and sg_status.lower() in ["triggered", "done"]:
-                                await self.campaign_repo.update(db, child, {"status": "sent"})
-                            else:
-                                all_sent = False
-                        except Exception as e:
-                            all_sent = False
-                    else:
-                        all_sent = False
-                elif child.status != "sent":
-                    all_sent = False
-                    
-            if all_sent and children:
-                await self.campaign_repo.update(db, w, {"status": "sent"})
+                    sub_camp = await provider.create_single_send(
+                        name=f"{campaign.name} - Day {day}",
+                        subject=campaign.subject,
+                        list_id=new_list_id,
+                        sender_id=1,
+                        html_content=""
+                    )
+                    send_time_str = send_time.strftime("%Y-%m-%dT%H:%M:%SZ") if idx > 0 else "now"
+                    await provider.schedule_single_send(sub_camp.get("id"), send_time_str)
+                    child_campaign_id = sub_camp.get("id")
+
+                child_data = {
+                    "store_id": store_id,
+                    "sendgrid_campaign_id": child_campaign_id,
+                    "name": f"{campaign.name} - Day {day}",
+                    "subject": campaign.subject,
+                    "status": "scheduled",
+                    "parent_id": campaign.id,
+                    "warmup_day": day,
+                    "scheduled_at": send_time
+                }
+                await self.campaign_repo.create(db, child_data)
+
+            updated_campaign = await self.campaign_repo.update(db, campaign, {
+                "status": "scheduled",
+                "scheduled_at": first_scheduled_at
+            })
+            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Warmup campaign scheduled across stages")
+            return updated_campaign
+
+        else:
+            # Regular (Non-warmup) Campaign Send
+            if isinstance(provider, MailgunClient):
+                recipients = [{"email": c.email, "first_name": c.first_name, "last_name": c.last_name, "id": str(c.id)} for c in contacts]
+                await provider.send_batch_email(
+                    recipients=recipients,
+                    subject=campaign.subject or campaign.name,
+                    html_content=f"<p>{campaign.subject or campaign.name}</p>",
+                    from_email=settings.from_email or f"noreply@{settings.mailgun_domain}",
+                    from_name=settings.from_name,
+                    campaign_name=campaign.name,
+                    tags=["campaign"]
+                )
+            else:
+                await provider.schedule_single_send(campaign.sendgrid_campaign_id)
+
+            now_dt = datetime.datetime.now(datetime.timezone.utc)
+            updated_campaign = await self.campaign_repo.update(db, campaign, {
+                "status": "sent",
+                "scheduled_at": now_dt
+            })
+            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Campaign sent live successfully")
+            return updated_campaign
 
     async def run_live_campaign(self, db: AsyncSession, store_id: str, campaign_id: str):
         campaign = await self.campaign_repo.get_by_id(db, campaign_id)
@@ -358,10 +442,10 @@ class EmailMarketingService:
             raise ValueError("Cannot run this campaign live while it is in warm-up freeze.")
 
         if campaign.status not in {"draft", "scheduled"}:
-            raise ValueError(f"This campaign cannot be scheduled again because its current status is '{campaign.status}'. Only draft or scheduled campaigns can be run.")
+            raise ValueError(f"This campaign cannot be scheduled again because its current status is '{campaign.status}'.")
 
         result = await self.schedule_campaign(db, store_id, campaign_id)
-        await self._log_campaign_run(db, store_id, campaign_id, "manual_run", "completed", "Campaign started live", {"scheduled_at": getattr(campaign, "scheduled_at", None).isoformat() if getattr(campaign, "scheduled_at", None) else None})
+        await self._log_campaign_run(db, store_id, campaign_id, "manual_run", "completed", "Campaign started live")
         return result
 
     async def _log_campaign_run(self, db: AsyncSession, store_id: str, campaign_id: str, event_type: str, status: str, message: str, details: dict | None = None):
@@ -381,133 +465,25 @@ class EmailMarketingService:
             raise ValueError("Campaign not found or does not belong to this store.")
         return await self.run_log_repo.get_by_campaign_id(db, campaign_id)
 
-    async def schedule_campaign(self, db: AsyncSession, store_id: str, campaign_id: str):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-
-        campaign = await self.campaign_repo.get_by_id(db, campaign_id)
-        if not campaign or str(campaign.store_id) != str(store_id):
-            raise ValueError("Campaign not found or does not belong to this store.")
-
-        client = SendGridClient(settings.sendgrid_api_key)
-
-        if campaign.status not in {"draft", "scheduled"}:
-            raise ValueError(f"This campaign cannot be scheduled because its current status is '{campaign.status}'. Only draft or scheduled campaigns can be run.")
-
-        if campaign.is_warmup:
-            sg_camp = await client.get_single_send(campaign.sendgrid_campaign_id)
-            email_config = sg_camp.get("email_config", {})
-            send_to = sg_camp.get("send_to", {})
-            list_ids = send_to.get("list_ids", [])
-            if not list_ids:
-                raise ValueError("Cannot warmup campaign without a target list.")
-            
-            target_list_id = list_ids[0]
-            
-            from app.models.email_contact import EmailContact
-            from sqlalchemy.future import select
-            
-            default_list_id = settings.sendgrid_default_list_id
-            if target_list_id == default_list_id:
-                query = select(EmailContact).where(
-                    EmailContact.store_id == store_id,
-                    (EmailContact.sendgrid_list_id == target_list_id) | (EmailContact.sendgrid_list_id == None)
-                )
-            else:
-                query = select(EmailContact).where(
-                    EmailContact.store_id == store_id,
-                    EmailContact.sendgrid_list_id == target_list_id
-                )
-                
-            result = await db.execute(query)
-            contacts = result.scalars().all()
-            
-            if not contacts:
-                raise ValueError("No contacts found for this list.")
-                
-            WARMUP_SCHEDULE = [45, 90, 180, 360, 720, 1440, 2880, 5760, 11520, 23040, 46080, 50000]
-            chunks = []
-            remaining = list(contacts)
-            day_idx = 0
-            while remaining:
-                limit = WARMUP_SCHEDULE[day_idx] if day_idx < len(WARMUP_SCHEDULE) else WARMUP_SCHEDULE[-1]
-                chunks.append(remaining[:limit])
-                remaining = remaining[limit:]
-                day_idx += 1
-                
-            import datetime
-            first_scheduled_at = None
-            for idx, chunk in enumerate(chunks):
-                day = idx + 1
-                new_list_name = f"{campaign.name} - Warmup Day {day}"
-                new_list = await client.create_list(new_list_name)
-                new_list_id = new_list.get("id")
-
-                sg_contacts = [{"email": c.email, "first_name": c.first_name, "last_name": c.last_name} for c in chunk]
-                await client.add_or_update_contacts(new_list_id, sg_contacts)
-
-                sub_camp = await client.create_single_send(
-                    name=f"{campaign.name} - Day {day}",
-                    subject=email_config.get("subject"),
-                    list_id=new_list_id,
-                    sender_id=email_config.get("sender_id"),
-                    suppression_group_id=email_config.get("suppression_group_id"),
-                    custom_unsubscribe_url=email_config.get("custom_unsubscribe_url"),
-                    html_content=email_config.get("html_content", "")
-                )
-
-                send_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=idx)
-                if idx == 0:
-                    first_scheduled_at = send_time
-                send_time_str = send_time.strftime("%Y-%m-%dT%H:%M:%SZ") if idx > 0 else "now"
-                await client.schedule_single_send(sub_camp.get("id"), send_time_str)
-
-                child_data = {
-                    "store_id": store_id,
-                    "sendgrid_campaign_id": sub_camp.get("id"),
-                    "name": f"{campaign.name} - Day {day}",
-                    "subject": email_config.get("subject"),
-                    "status": "scheduled",
-                    "parent_id": campaign.id,
-                    "warmup_day": day,
-                    "scheduled_at": send_time
-                }
-                await self.campaign_repo.create(db, child_data)
-
-            updated_campaign = await self.campaign_repo.update(db, campaign, {"status": "scheduled", "scheduled_at": first_scheduled_at})
-            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Warmup campaign scheduled", {"status": updated_campaign.status, "scheduled_at": updated_campaign.scheduled_at.isoformat() if updated_campaign.scheduled_at else None})
-            return updated_campaign
-        else:
-            await client.schedule_single_send(campaign.sendgrid_campaign_id)
-            import datetime
-            updated_campaign = await self.campaign_repo.update(db, campaign, {
-                "status": "scheduled",
-                "scheduled_at": datetime.datetime.now(datetime.timezone.utc)
-            })
-            await self._log_campaign_run(db, store_id, campaign_id, "scheduled", "completed", "Campaign scheduled for sending", {"status": updated_campaign.status, "scheduled_at": updated_campaign.scheduled_at.isoformat() if updated_campaign.scheduled_at else None})
-            return updated_campaign
-
     async def get_campaign_stats(self, db: AsyncSession, store_id: str, campaign_ids: list[str] = None):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-            
-        client = SendGridClient(settings.sendgrid_api_key)
-        return await client.get_single_sends_stats(campaign_ids)
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        return await provider.get_campaign_stats(campaign_ids)
 
     async def send_transactional_email(self, db: AsyncSession, store_id: str, to_email: str, subject: str, html_content: str, from_name: str = None):
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key or not settings.from_email:
-            raise ValueError("Store missing SendGrid API key or 'from_email' setting.")
-
-        client = SendGridClient(settings.sendgrid_api_key)
+        provider, settings = await self._get_provider_for_store(db, store_id)
         
-        response = await client.send_transactional_email(
+        from_email = settings.from_email
+        if not from_email:
+            if isinstance(provider, MailgunClient):
+                from_email = f"noreply@{settings.mailgun_domain}"
+            else:
+                raise ValueError("Store missing 'from_email' setting.")
+
+        response = await provider.send_transactional_email(
             to_email=to_email,
             subject=subject,
             html_content=html_content,
-            from_email=settings.from_email,
+            from_email=from_email,
             from_name=from_name or settings.from_name
         )
 
@@ -516,27 +492,68 @@ class EmailMarketingService:
         log_data = {
             "store_id": store_id,
             "sendgrid_msg_id": response.get("message_id", "unknown"),
+            "provider": getattr(settings, "provider", "mailgun"),
             "event_type": "transactional_sent"
         }
         await tracking_repo.create(db, log_data)
         
         return response
 
+    async def check_domain_dns(self, db: AsyncSession, store_id: str) -> Dict[str, Any]:
+        """Check domain DNS records and deliverability status (Mailgun)"""
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        return await provider.check_domain_dns()
+
+    async def get_ip_warmup_status(self, db: AsyncSession, store_id: str) -> Dict[str, Any]:
+        """Check Dedicated IP warmup status (Mailgun)"""
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        return await provider.get_ip_warmup_status()
+
+    async def toggle_ip_warmup(self, db: AsyncSession, store_id: str, ip_address: str, enable: bool = True) -> Dict[str, Any]:
+        """Toggle dedicated IP warmup (Mailgun)"""
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        if isinstance(provider, MailgunClient):
+            return await provider.toggle_ip_warmup(ip_address, enable)
+        return {"status": "not_supported", "message": "IP warmup toggling is not supported on this provider"}
+
+    async def sync_campaigns_status(self, db: AsyncSession, store_id: str):
+        from sqlalchemy.future import select
+        from app.models.email_campaign import EmailCampaign
+        settings = await self.setting_repo.get_by_store_id(db, store_id)
+        if not settings:
+            return
+            
+        try:
+            provider = EmailProviderFactory.get_provider(settings)
+        except Exception:
+            return
+
+        # Check SendGrid single sends
+        if isinstance(provider, SendGridClient):
+            res = await db.execute(select(EmailCampaign).where(EmailCampaign.store_id == store_id, EmailCampaign.status == "scheduled"))
+            campaigns = res.scalars().all()
+            for c in campaigns:
+                if c.sendgrid_campaign_id and not c.sendgrid_campaign_id.startswith("mg_"):
+                    try:
+                        sg_camp = await provider.get_single_send(c.sendgrid_campaign_id)
+                        sg_status = sg_camp.get("status")
+                        if sg_status and sg_status.lower() in ["triggered", "done"]:
+                            await self.campaign_repo.update(db, c, {"status": "sent"})
+                    except Exception as e:
+                        logger.error(f"Failed to check status for {c.sendgrid_campaign_id}: {e}")
 
     async def sync_sendgrid_data(self, db: AsyncSession, store_id: str):
+        """Sync lists, senders, and suppression groups from active provider into local DB"""
         from app.models.sendgrid_data import SendgridList, SendgridSender, SendgridSuppressionGroup
         from sqlalchemy.future import select
         
-        settings = await self.setting_repo.get_by_store_id(db, store_id)
-        if not settings or not settings.sendgrid_api_key:
-            raise ValueError("Store missing SendGrid API key.")
-            
-        client = SendGridClient(settings.sendgrid_api_key)
+        provider, settings = await self._get_provider_for_store(db, store_id)
+        
         import asyncio
         lists_data, senders_data, supp_data = await asyncio.gather(
-            client.get_lists(),
-            client.get_senders(),
-            client.get_suppression_groups(),
+            provider.get_lists(),
+            provider.get_senders(),
+            provider.get_suppression_groups(),
             return_exceptions=True
         )
         
@@ -546,7 +563,7 @@ class EmailMarketingService:
 
         # Upsert Lists
         for l in lists_data:
-            list_id_str = str(l.get("id"))
+            list_id_str = str(l.get("id") or l.get("address"))
             existing = await db.scalar(select(SendgridList).where(SendgridList.sg_list_id == list_id_str))
             if existing:
                 existing.name = l.get("name", "")
@@ -557,19 +574,22 @@ class EmailMarketingService:
 
         # Upsert Senders
         for s in senders_data:
-            sender_id = int(s.get("id"))
+            sender_id = int(s.get("id", 1))
             existing = await db.scalar(select(SendgridSender).where(SendgridSender.sg_sender_id == sender_id))
+            from_info = s.get("from", {})
+            from_email = from_info.get("email", "") if isinstance(from_info, dict) else str(from_info)
+            from_name = from_info.get("name") if isinstance(from_info, dict) else None
             if existing:
                 existing.nickname = s.get("nickname")
-                existing.from_email = s.get("from", {}).get("email", "")
-                existing.from_name = s.get("from", {}).get("name")
+                existing.from_email = from_email
+                existing.from_name = from_name
             else:
-                new_sender = SendgridSender(store_id=store_id, sg_sender_id=sender_id, nickname=s.get("nickname"), from_email=s.get("from", {}).get("email", ""), from_name=s.get("from", {}).get("name"))
+                new_sender = SendgridSender(store_id=store_id, sg_sender_id=sender_id, nickname=s.get("nickname"), from_email=from_email, from_name=from_name)
                 db.add(new_sender)
 
         # Upsert Suppression Groups
         for sg in supp_data:
-            sg_id = int(sg.get("id"))
+            sg_id = int(sg.get("id", 1))
             existing = await db.scalar(select(SendgridSuppressionGroup).where(SendgridSuppressionGroup.sg_group_id == sg_id))
             if existing:
                 existing.name = sg.get("name", "")
@@ -580,9 +600,4 @@ class EmailMarketingService:
                 db.add(new_sg)
 
         await db.commit()
-        
-        # Trigger background heavy sync for contacts and campaigns
-        from app.jobs.sync_sendgrid_job import trigger_heavy_sync_for_store
-        asyncio.create_task(trigger_heavy_sync_for_store(store_id))
-        
-        return {"message": "Basic sync completed, heavy data sync started in background"}
+        return {"message": "Sync completed successfully"}

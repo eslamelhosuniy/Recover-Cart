@@ -12,6 +12,8 @@ export default function Settings() {
   const sallaWebhookUrl = `${origin}/api/v1/webhooks/salla?store_id=${activeStoreId}`
   const whatsappWebhookUrl = `${origin}/api/v1/webhooks/whatsapp?store_id=${activeStoreId}`
   const ghlWebhookUrl = `${origin}/api/v1/webhooks/ghl?store_id=${activeStoreId}`
+  const mailgunWebhookUrl = `${origin}/webhooks/mailgun/${activeStoreId}`
+  const sendgridWebhookUrl = `${origin}/webhooks/sendgrid/${activeStoreId}`
 
   const [formData, setFormData] = useState({
     salla_webhook_secret: '',
@@ -33,8 +35,15 @@ export default function Settings() {
   })
   
   const [emailData, setEmailData] = useState({
+    provider: 'mailgun',
     sendgrid_api_key: '',
     sendgrid_default_list_id: '',
+    mailgun_api_key: '',
+    mailgun_domain: '',
+    mailgun_region: 'us',
+    mailgun_webhook_signing_key: '',
+    mailgun_default_list_address: '',
+    mailgun_ip_pool: '',
     from_email: '',
     from_name: '',
     is_active: false,
@@ -51,7 +60,56 @@ export default function Settings() {
   const [imageVerifying, setImageVerifying] = useState(false)
   const [imageVerified, setImageVerified] = useState(false)
   const [imagePreview, setImagePreview] = useState('')
+  const [dnsStatus, setDnsStatus] = useState(null)
+  const [dnsChecking, setDnsChecking] = useState(false)
+  const [ipWarmupInfo, setIpWarmupInfo] = useState(null)
+  const [ipWarmupLoading, setIpWarmupLoading] = useState(false)
+  const [showMailgunApiKey, setShowMailgunApiKey] = useState(false)
+  const [showMailgunSigningKey, setShowMailgunSigningKey] = useState(false)
+  const [showSendgridApiKey, setShowSendgridApiKey] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState('')
   const { showNotification } = useNotification()
+
+  const copyToClipboard = (text, label) => {
+    navigator.clipboard.writeText(text)
+    setCopiedUrl(label)
+    showNotification('تم نسخ الرابط بنجاح', 'success')
+    setTimeout(() => setCopiedUrl(''), 3000)
+  }
+
+  const handleCheckDomainDNS = async () => {
+    if (!activeStoreId) return
+    setDnsChecking(true)
+    try {
+      const res = await emailMarketingApi.getMailgunDomainStatus(activeStoreId)
+      setDnsStatus(res.data)
+      if (res.data?.is_active) {
+        showNotification('النطاق مفعل وجاهز للإرسال بنجاح', 'success')
+      } else {
+        showNotification('تم فحص سجلات النطاق. يرجى مراجعة حالة السجلات أدناه.', 'info')
+      }
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'فشل فحص سجلات النطاق'
+      showNotification(msg, 'error')
+    } finally {
+      setDnsChecking(false)
+    }
+  }
+
+  const handleCheckIpWarmup = async () => {
+    if (!activeStoreId) return
+    setIpWarmupLoading(true)
+    try {
+      const res = await emailMarketingApi.getMailgunIpWarmup(activeStoreId)
+      setIpWarmupInfo(res.data)
+      showNotification('تم جلب بيانات إحماء الـ IP المخصص', 'success')
+    } catch (err) {
+      showNotification('تعذر جلب حالة إحماء الـ IP المخصص', 'warning')
+    } finally {
+      setIpWarmupLoading(false)
+    }
+  }
+
 
 
   useEffect(() => {
@@ -133,27 +191,22 @@ export default function Settings() {
         await settingsApi.update(activeStoreId, formData)
       }
 
-      // Only attempt to update email settings if email is active
-      if (emailData.is_active) {
-        try {
-          await emailMarketingApi.updateSettings(activeStoreId, emailData)
-          showNotification("تم حفظ الإعدادات بنجاح", 'success')
-        } catch (emailErr) {
-          // Extract error message with proper type checking
-          let emailMessage = 'فشل حفظ إعدادات الإيميل.'
-          if (emailErr.response?.data) {
-            if (typeof emailErr.response.data.detail === 'string') {
-              emailMessage = emailErr.response.data.detail
-            } else if (typeof emailErr.response.data.message === 'string') {
-              emailMessage = emailErr.response.data.message
-            }
-          } else if (typeof emailErr.message === 'string') {
-            emailMessage = emailErr.message
-          }
-          showNotification(`تم حفظ إعدادات المتجر. ${emailMessage}`, 'warning')
-        }
-      } else {
+      // Save email marketing settings
+      try {
+        await emailMarketingApi.updateSettings(activeStoreId, emailData)
         showNotification("تم حفظ الإعدادات بنجاح", 'success')
+      } catch (emailErr) {
+        let emailMessage = 'فشل حفظ إعدادات الإيميل.'
+        if (emailErr.response?.data) {
+          if (typeof emailErr.response.data.detail === 'string') {
+            emailMessage = emailErr.response.data.detail
+          } else if (typeof emailErr.response.data.message === 'string') {
+            emailMessage = emailErr.response.data.message
+          }
+        } else if (typeof emailErr.message === 'string') {
+          emailMessage = emailErr.message
+        }
+        showNotification(`تم حفظ إعدادات المتجر. ${emailMessage}`, 'warning')
       }
     } catch (err) {
       const message = err.response?.data?.detail || err.response?.data?.message || err.message || 'حدث خطأ أثناء الحفظ.'
@@ -982,7 +1035,7 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* SendGrid Configuration Card */}
+            {/* Email Marketing Provider Configuration Card */}
             <div
               style={{
                 background: 'linear-gradient(135deg, rgba(22, 25, 37, 0.7) 0%, rgba(15, 17, 26, 0.8) 100%)',
@@ -996,27 +1049,320 @@ export default function Settings() {
                 gap: '1.25rem'
               }}
             >
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0ea5e9', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <i className="fa-solid fa-envelope" />
-                إعدادات التسويق عبر الإيميل (SendGrid)
-              </h3>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  مفتاح واجهة برمجة التطبيقات (API Key)
-                </label>
-                <input
-                  type="password"
-                  name="sendgrid_api_key"
-                  className="form-input"
-                  value={emailData.sendgrid_api_key || ''}
-                  onChange={handleChange}
-                  dir="ltr"
-                  placeholder="SG.xxxxxxxxxxxxxxxxxxxx"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0ea5e9', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <i className="fa-solid fa-envelope" />
+                  إعدادات مزود البريد الإلكتروني (Email Provider)
+                </h3>
+                <span className="badge" style={{ backgroundColor: emailData.provider === 'mailgun' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(14, 165, 233, 0.15)', color: emailData.provider === 'mailgun' ? '#ef4444' : '#0ea5e9', border: `1px solid ${emailData.provider === 'mailgun' ? '#ef4444' : '#0ea5e9'}`, fontSize: '0.75rem', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>
+                  {emailData.provider === 'mailgun' ? 'Mailgun Active' : 'SendGrid Active'}
+                </span>
               </div>
 
+              {/* Provider Selection Tabs */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.35rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                <button
+                  type="button"
+                  onClick={() => setEmailData(prev => ({ ...prev, provider: 'mailgun' }))}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    padding: '0.6rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s',
+                    backgroundColor: emailData.provider === 'mailgun' ? '#ef4444' : 'transparent',
+                    color: emailData.provider === 'mailgun' ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  <i className="fa-solid fa-bolt" />
+                  Mailgun (الموصى به)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmailData(prev => ({ ...prev, provider: 'sendgrid' }))}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    padding: '0.6rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    transition: 'all 0.2s',
+                    backgroundColor: emailData.provider === 'sendgrid' ? '#0ea5e9' : 'transparent',
+                    color: emailData.provider === 'sendgrid' ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  <i className="fa-solid fa-paper-plane" />
+                  SendGrid
+                </button>
+              </div>
+
+              {/* Mailgun Provider Settings */}
+              {emailData.provider === 'mailgun' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                      مفتاح Mailgun API Key
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showMailgunApiKey ? "text" : "password"}
+                        name="mailgun_api_key"
+                        className="form-input"
+                        value={emailData.mailgun_api_key || ''}
+                        onChange={handleChange}
+                        dir="ltr"
+                        placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxxxxx-xxxxxxxx"
+                        style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', paddingLeft: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowMailgunApiKey(!showMailgunApiKey)}
+                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        <i className={`fa-solid ${showMailgunApiKey ? 'fa-eye-slash' : 'fa-eye'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                        نطاق الإرسال (Sending Domain)
+                      </label>
+                      <input
+                        type="text"
+                        name="mailgun_domain"
+                        className="form-input"
+                        value={emailData.mailgun_domain || ''}
+                        onChange={handleChange}
+                        dir="ltr"
+                        placeholder="mail.yourdomain.com"
+                        style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                        المنطقة (Region)
+                      </label>
+                      <select
+                        name="mailgun_region"
+                        className="form-input"
+                        value={emailData.mailgun_region || 'us'}
+                        onChange={handleChange}
+                        style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}
+                      >
+                        <option value="us">US (api.mailgun.net)</option>
+                        <option value="eu">EU (api.eu.mailgun.net)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                      مفتاح توقيع الويب هوك (HTTP Webhook Signing Key)
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showMailgunSigningKey ? "text" : "password"}
+                        name="mailgun_webhook_signing_key"
+                        className="form-input"
+                        value={emailData.mailgun_webhook_signing_key || ''}
+                        onChange={handleChange}
+                        dir="ltr"
+                        placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                        style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', paddingLeft: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowMailgunSigningKey(!showMailgunSigningKey)}
+                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        <i className={`fa-solid ${showMailgunSigningKey ? 'fa-eye-slash' : 'fa-eye'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mailgun Webhook Copy Box */}
+                  <div style={{ backgroundColor: 'rgba(0,0,0,0.25)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px dashed rgba(239, 68, 68, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>رابط الـ Webhook الخاص بـ Mailgun في متجرك (قم بوضعه في لوحة تحكم Mailgun):</div>
+                      <div style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#ef4444', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} dir="ltr">{mailgunWebhookUrl}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(mailgunWebhookUrl, 'mailgun_webhook')}
+                      className="btn btn-sm btn-secondary"
+                      style={{ flexShrink: 0 }}
+                    >
+                      <i className={`fa-solid ${copiedUrl === 'mailgun_webhook' ? 'fa-check text-success' : 'fa-copy'}`} />
+                      {copiedUrl === 'mailgun_webhook' ? ' تم النسخ' : ' نسخ'}
+                    </button>
+                  </div>
+
+                  {/* Domain DNS & IP Warmup Tools */}
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                    <button
+                      type="button"
+                      onClick={handleCheckDomainDNS}
+                      disabled={dnsChecking || !emailData.mailgun_domain}
+                      className="btn btn-sm btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: 'rgba(239,68,68,0.4)' }}
+                    >
+                      <i className={`fa-solid fa-shield-halved ${dnsChecking ? 'fa-spin' : ''}`} />
+                      {dnsChecking ? 'جارٍ فحص سجلات النطاق...' : 'فحص سجلات DNS وجودة النطاق'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCheckIpWarmup}
+                      disabled={ipWarmupLoading}
+                      className="btn btn-sm btn-secondary"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    >
+                      <i className={`fa-solid fa-server ${ipWarmupLoading ? 'fa-spin' : ''}`} />
+                      {ipWarmupLoading ? 'جارٍ جلب حالة IP...' : 'فحص إحماء الـ IP المخصص'}
+                    </button>
+                  </div>
+
+                  {/* DNS Status Results Box */}
+                  {dnsStatus && (
+                    <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)', marginTop: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>حالة النطاق: {dnsStatus.domain}</span>
+                        <span className={`badge ${dnsStatus.is_active ? 'badge-success' : 'badge-warning'}`}>
+                          {dnsStatus.is_active ? 'نشط ومفعل (Active)' : 'غير مكتمل أو قيد التحقق (Unverified)'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+                        <div style={{ padding: '0.5rem', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.03)', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>SPF Record</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: dnsStatus.spf_valid ? '#10b981' : '#ef4444' }}>
+                            {dnsStatus.spf_valid ? '✓ صالح (Valid)' : '✗ غير مكتمل'}
+                          </div>
+                        </div>
+                        <div style={{ padding: '0.5rem', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.03)', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>DKIM Record</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: dnsStatus.dkim_valid ? '#10b981' : '#ef4444' }}>
+                            {dnsStatus.dkim_valid ? '✓ صالح (Valid)' : '✗ غير مكتمل'}
+                          </div>
+                        </div>
+                        <div style={{ padding: '0.5rem', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.03)', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>MX Records</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: dnsStatus.mx_valid ? '#10b981' : 'var(--text-muted)' }}>
+                            {dnsStatus.mx_valid ? '✓ موجه (Valid)' : 'اختياري للإرسال'}
+                          </div>
+                        </div>
+                        <div style={{ padding: '0.5rem', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.03)', textAlign: 'center' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>CNAME Tracking</div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: dnsStatus.cname_valid ? '#10b981' : 'var(--text-muted)' }}>
+                            {dnsStatus.cname_valid ? '✓ صالح (Valid)' : 'تتبع مخصص'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Dedicated IP Warmup Results Box */}
+                  {ipWarmupInfo && (
+                    <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0ea5e9' }}>
+                        بيانات إحماء الـ Dedicated IP (Mailgun)
+                      </div>
+                      {ipWarmupInfo.has_dedicated_ips ? (
+                        <div style={{ fontSize: '0.8rem' }}>
+                          <p>لديك {ipWarmupInfo.ips_count} عنوان IP مخصص في حسابك.</p>
+                          {ipWarmupInfo.ips?.map((ipItem, idx) => (
+                            <div key={idx} style={{ padding: '0.5rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '4px', marginTop: '0.4rem' }}>
+                              <strong>IP:</strong> {ipItem.ip || ipItem.ip_address} | <strong>Warmup:</strong> {ipItem.warmup ? 'مفعل' : 'غير مفعل'}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          الحساب يستخدم بركة الـ IP المشتركة عالية السمعة (Shared IP Pool). لا يتطلب إحماء للـ Dedicated IP، وتعمل ميزة إحماء الحملات التصاعدية على مستوى المتجر تلقائياً.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* SendGrid Provider Settings */}
+              {emailData.provider === 'sendgrid' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', backgroundColor: 'rgba(14, 165, 233, 0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(14, 165, 233, 0.15)' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                      مفتاح SendGrid API Key
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showSendgridApiKey ? "text" : "password"}
+                        name="sendgrid_api_key"
+                        className="form-input"
+                        value={emailData.sendgrid_api_key || ''}
+                        onChange={handleChange}
+                        dir="ltr"
+                        placeholder="SG.xxxxxxxxxxxxxxxxxxxx"
+                        style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', paddingLeft: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSendgridApiKey(!showSendgridApiKey)}
+                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        <i className={`fa-solid ${showSendgridApiKey ? 'fa-eye-slash' : 'fa-eye'}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                      معرف القائمة الافتراضية (Default List ID)
+                    </label>
+                    <input
+                      type="text"
+                      name="sendgrid_default_list_id"
+                      className="form-input"
+                      value={emailData.sendgrid_default_list_id || ''}
+                      onChange={handleChange}
+                      dir="ltr"
+                      placeholder="مثال: 11a22b33c-44d5"
+                      style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}
+                    />
+                  </div>
+
+                  {/* SendGrid Webhook Copy Box */}
+                  <div style={{ backgroundColor: 'rgba(0,0,0,0.25)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px dashed rgba(14, 165, 233, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>رابط الـ Webhook الخاص بـ SendGrid في متجرك:</div>
+                      <div style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#0ea5e9', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} dir="ltr">{sendgridWebhookUrl}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(sendgridWebhookUrl, 'sendgrid_webhook')}
+                      className="btn btn-sm btn-secondary"
+                      style={{ flexShrink: 0 }}
+                    >
+                      <i className={`fa-solid ${copiedUrl === 'sendgrid_webhook' ? 'fa-check text-success' : 'fa-copy'}`} />
+                      {copiedUrl === 'sendgrid_webhook' ? ' تم النسخ' : ' نسخ'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Sender Details (Common) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
@@ -1029,7 +1375,7 @@ export default function Settings() {
                     value={emailData.from_email || ''}
                     onChange={handleChange}
                     dir="ltr"
-                    placeholder="marketing@yourdomain.com"
+                    placeholder="marketing@mail.wedadmarketing.com"
                     style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
                   />
                 </div>
@@ -1044,32 +1390,22 @@ export default function Settings() {
                     className="form-input"
                     value={emailData.from_name || ''}
                     onChange={handleChange}
-                    placeholder="مثال: متجر الهدايا"
+                    placeholder="مثال: متجر وداد"
                     style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
                   />
                 </div>
               </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                  معرف القائمة الافتراضية (Default List ID)
-                </label>
-                <input
-                  type="text"
-                  name="sendgrid_default_list_id"
-                  className="form-input"
-                  value={emailData.sendgrid_default_list_id || ''}
-                  onChange={handleChange}
-                  dir="ltr"
-                  placeholder="مثال: 11a22b33c-44d5"
-                  style={{ height: '40px', borderRadius: '6px', backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border)' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginTop: '0.5rem' }}>
+              {/* Campaign Warmup Engine Toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginTop: '0.5rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px' }}>
                 <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>تفعيل إحماء الإيميل (IP Warmup)</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>إرسال الحملات بشكل تدريجي لتجنب حظر النطاق (50، 100، 500...). اليوم الحالي: {emailData.warmup_current_day || 1}</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>
+                    <i className="fa-solid fa-fire-flame-curved" style={{ color: '#f59e0b', marginLeft: '0.4rem' }} />
+                    تفعيل إحماء الحملات التدريجي (Campaign Warmup Engine)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    إرسال الحملات الكبيرة على دفعات يومية تصاعدية (45، 90، 180، 360...) لبناء سمعة النطاق. اليوم الحالي: {emailData.warmup_current_day || 1}
+                  </div>
                 </div>
                 <div className="toggle-wrap" style={{ margin: 0 }}>
                   <input
@@ -1084,31 +1420,30 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div style={{ marginTop: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Email Module Toggle */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
                   <div>
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>تفعيل موديول الإيميل</h4>
+                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text)' }}>تفعيل موديول الإيميل للمتجر</h4>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '4px 0 0 0' }}>
-                      تفعيل أو تعطيل خواص الإيميل لهذا المتجر.
+                      تمكين أو تعطيل خواص وحملات الإيميل التسويقية لهذا المتجر.
                     </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>تفعيل الإيميل</span>
-                    <div className="toggle-wrap" style={{ margin: 0 }}>
-                      <input
-                        type="checkbox"
-                        id="is_active"
-                        name="is_active"
-                        className="toggle-input"
-                        checked={emailData.is_active}
-                        onChange={handleChange}
-                      />
-                      <label htmlFor="is_active" className="toggle-label"></label>
-                    </div>
+                  <div className="toggle-wrap" style={{ margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      name="is_active"
+                      className="toggle-input"
+                      checked={emailData.is_active}
+                      onChange={handleChange}
+                    />
+                    <label htmlFor="is_active" className="toggle-label"></label>
                   </div>
                 </div>
               </div>
             </div>
+
 
             {/* Email Validation Settings Card */}
             <div

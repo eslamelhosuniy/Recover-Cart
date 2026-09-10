@@ -93,11 +93,11 @@ export function AuthProvider({ children }) {
   }, [stores])
 
   
-  // Sync SendGrid data in background on store change
+  // Sync Email Provider data in background on store change
   useEffect(() => {
     if (activeStore?.id) {
-      emailMarketingApi.syncSendgridData(activeStore.id).catch(err => {
-        console.error("Background sync failed", err)
+      emailMarketingApi.syncProviderData(activeStore.id).catch(err => {
+        console.error("Background provider sync failed", err)
       })
     }
   }, [activeStore?.id])
